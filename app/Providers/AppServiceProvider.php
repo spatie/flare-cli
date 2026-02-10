@@ -4,6 +4,7 @@ namespace App\Providers;
 
 use App\Services\CredentialStore;
 use Illuminate\Support\ServiceProvider;
+use Spatie\OpenApiCli\OpenApiCli;
 
 class AppServiceProvider extends ServiceProvider
 {
@@ -12,7 +13,12 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
-        //
+        OpenApiCli::register(
+            specPath: resource_path('openapi/flare-api.yaml'),
+            prefix: 'flare',
+        )
+            ->useOperationIds()
+            ->auth(fn () => app(CredentialStore::class)->getToken());
     }
 
     /**
