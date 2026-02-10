@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fc2f6571e56019d14cb37a5017ab9e2c",
+    "content-hash": "d129c1db9c6a507f6c37970ee557312a",
     "packages": [
         {
             "name": "brick/math",
@@ -3779,7 +3779,7 @@
                 "laravel-openapi-cli"
             ],
             "transport-options": {
-                "symlink": true,
+                "symlink": false,
                 "relative": true
             }
         },

@@ -32,7 +32,7 @@
             "type": "path",
             "url": "../laravel-openapi-cli",
             "options": {
-                "symlink": true
+                "symlink": false
             }
         }
     ],
