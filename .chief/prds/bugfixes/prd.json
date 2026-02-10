@@ -12,8 +12,8 @@
         "The fallback remains `'unknown'` for edge cases where email is missing"
       ],
       "priority": 1,
-      "passes": false,
-      "inProgress": true
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-002",
