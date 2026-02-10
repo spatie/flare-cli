@@ -2,18 +2,23 @@
 
 namespace App\Commands;
 
+use App\Concerns\RendersBanner;
 use App\Services\CredentialStore;
 use Illuminate\Support\Facades\Http;
 use LaravelZero\Framework\Commands\Command;
 
 class LoginCommand extends Command
 {
+    use RendersBanner;
+
     protected $signature = 'login';
 
     protected $description = 'Store your Flare API token for authentication';
 
     public function handle(CredentialStore $credentials): int
     {
+        $this->renderBanner($this->output);
+
         $token = $this->secret('Enter your Flare API token');
 
         if (! $token) {
