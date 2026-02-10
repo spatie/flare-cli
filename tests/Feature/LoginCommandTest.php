@@ -28,13 +28,16 @@ afterEach(function () {
 it('stores credentials on successful login', function () {
     Http::fake([
         'flareapp.io/api/me' => Http::response([
-            'data' => ['name' => 'Alex'],
+            'id' => 20,
+            'name' => 'Alex',
+            'email' => 'alex@spatie.be',
+            'teams' => [],
         ]),
     ]);
 
     $this->artisan('login')
         ->expectsQuestion('Enter your Flare API token', 'valid-token-123')
-        ->expectsOutput('Logged in as Alex')
+        ->expectsOutput('Logged in as alex@spatie.be')
         ->assertExitCode(0);
 
     expect($this->store->getToken())->toBe('valid-token-123');

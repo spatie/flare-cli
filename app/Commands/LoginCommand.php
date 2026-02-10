@@ -38,8 +38,8 @@ class LoginCommand extends Command
 
         $credentials->setToken($token);
 
-        $name = $response->json('data.name', 'unknown');
-        $this->info("Logged in as {$name}");
+        $email = $response->json('email', 'unknown');
+        $this->info("Logged in as {$email}");
 
         return self::SUCCESS;
     }
