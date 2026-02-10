@@ -2,6 +2,7 @@
 
 namespace App\Providers;
 
+use App\Concerns\RendersBanner;
 use App\Services\CredentialStore;
 use App\Services\FlareDescriber;
 use Illuminate\Support\ServiceProvider;
@@ -24,29 +25,12 @@ class AppServiceProvider extends ServiceProvider
             ->useOperationIds()
             ->auth(fn () => app(CredentialStore::class)->getToken())
             ->banner(function ($command) {
-                $lines = [
-                    '  ███████╗ ██╗       █████╗  ██████╗  ███████╗',
-                    '  ██╔════╝ ██║      ██╔══██╗ ██╔══██╗ ██╔════╝',
-                    '  █████╗   ██║      ███████║ ██████╔╝ █████╗  ',
-                    '  ██╔══╝   ██║      ██╔══██║ ██╔══██╗ ██╔══╝  ',
-                    '  ██║      ███████╗ ██║  ██║ ██║  ██║ ███████╗',
-                    '  ╚═╝      ╚══════╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚══════╝',
-                ];
+                $renderer = new class
+                {
+                    use RendersBanner;
+                };
 
-                $gradient = [49, 43, 37, 99, 135, 93];
-
-                $command->line('');
-
-                foreach ($lines as $i => $line) {
-                    $command->line("\e[38;5;{$gradient[$i]}m{$line}\e[0m");
-                }
-
-                $command->line('');
-
-                $tagline = ' ✦ Catch errors. Fix slowdowns. :: flareapp.io ✦ ';
-                $command->line("\e[48;5;{$gradient[0]}m\e[30m\e[1m{$tagline}\e[0m");
-
-                $command->line('');
+                $renderer->renderBanner($command->getOutput());
             });
     }
 
