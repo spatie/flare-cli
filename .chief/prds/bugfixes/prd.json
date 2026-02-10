@@ -39,7 +39,8 @@
         "Uses `$output-\u003ewriteln()` directly (works with both Command output and Describer OutputInterface)"
       ],
       "priority": 3,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-004",

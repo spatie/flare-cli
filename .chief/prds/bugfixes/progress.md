@@ -26,4 +26,17 @@
   - 256-color ANSI: foreground is `\e[38;5;{code}m`, background is `\e[48;5;{code}m`, bold is `\e[1m`, reset is `\e[0m`
   - The existing `BannerTest` only checks for `flareapp.io` in output — it's resilient to color/art changes
   - US-003 will extract this banner logic into a reusable `RendersBanner` trait — keep the art/gradient arrays easy to extract
+- `RendersBanner` trait accepts `OutputInterface $output` and uses `$output->writeln()` — works with both Command output and Describer
+---
+
+## 2026-02-10 - US-003
+- What was implemented: Extracted banner rendering logic into a reusable `RendersBanner` trait at `app/Concerns/RendersBanner.php`
+- Files changed:
+  - `app/Concerns/RendersBanner.php` — new trait with `renderBanner(OutputInterface $output)` method containing the ASCII art, gradient colors, and tagline
+- **Learnings for future iterations:**
+  - The trait uses `Symfony\Component\Console\Output\OutputInterface` which is the common interface for both `$command->getOutput()` in Commands and `$output` in Describers
+  - `$output->writeln()` is equivalent to `$command->line()` — both write a line with newline
+  - US-004 can `use RendersBanner` and call `$this->renderBanner($this->output)` in LoginCommand
+  - US-005 FlareDescriber can `use RendersBanner` and call `$this->renderBanner($output)` in describeTitle()
+  - US-006 can update AppServiceProvider banner callback to instantiate/use the trait
 ---
