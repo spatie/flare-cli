@@ -1,29 +1,40 @@
 {
-    "name": "laravel-zero/laravel-zero",
-    "description": "The Laravel Zero Framework.",
-    "keywords": ["framework", "laravel", "laravel zero", "console", "cli"],
-    "homepage": "https://laravel-zero.com",
+    "name": "spatie/flare-cli",
+    "description": "A standalone CLI tool for Flare error tracking and performance monitoring.",
+    "keywords": ["flare", "spatie", "error-tracking", "cli", "monitoring"],
+    "homepage": "https://flareapp.io",
     "type": "project",
     "license": "MIT",
     "support": {
-        "issues": "https://github.com/laravel-zero/laravel-zero/issues",
-        "source": "https://github.com/laravel-zero/laravel-zero"
+        "issues": "https://github.com/spatie/flare-cli/issues",
+        "source": "https://github.com/spatie/flare-cli"
     },
     "authors": [
         {
-            "name": "Nuno Maduro",
-            "email": "enunomaduro@gmail.com"
+            "name": "Spatie",
+            "email": "info@spatie.be",
+            "homepage": "https://spatie.be"
         }
     ],
     "require": {
-        "php": "^8.2",
-        "laravel-zero/framework": "^12.0.2"
+        "php": "^8.4",
+        "laravel-zero/framework": "^12.0.2",
+        "spatie/laravel-openapi-cli": "*@dev"
     },
     "require-dev": {
         "laravel/pint": "^1.25.1",
         "mockery/mockery": "^1.6.12",
         "pestphp/pest": "^3.8.4|^4.1.2"
     },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../laravel-openapi-cli",
+            "options": {
+                "symlink": true
+            }
+        }
+    ],
     "autoload": {
         "psr-4": {
             "App\\": "app/",
@@ -46,5 +57,5 @@
     },
     "minimum-stability": "stable",
     "prefer-stable": true,
-    "bin": ["flare-cli"]
+    "bin": ["flare"]
 }
