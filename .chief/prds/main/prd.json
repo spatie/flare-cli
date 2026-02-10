@@ -146,7 +146,8 @@
         "Tests that touch credential storage use a temp directory (not the real ~/.flare)"
       ],
       "priority": 9,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     }
   ]
 }
