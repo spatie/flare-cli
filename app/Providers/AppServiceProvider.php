@@ -21,29 +21,28 @@ class AppServiceProvider extends ServiceProvider
             ->auth(fn () => app(CredentialStore::class)->getToken())
             ->banner(function ($command) {
                 $lines = [
-                    '  ███████╗██╗      █████╗ ██████╗ ███████╗',
-                    '  ██╔════╝██║     ██╔══██╗██╔══██╗██╔════╝',
-                    '  █████╗  ██║     ███████║██████╔╝█████╗  ',
-                    '  ██╔══╝  ██║     ██╔══██║██╔══██╗██╔══╝  ',
-                    '  ██║     ███████╗██║  ██║██║  ██║███████╗',
-                    '  ╚═╝     ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝',
+                    '  ███████╗ ██╗       █████╗  ██████╗  ███████╗',
+                    '  ██╔════╝ ██║      ██╔══██╗ ██╔══██╗ ██╔════╝',
+                    '  █████╗   ██║      ███████║ ██████╔╝ █████╗  ',
+                    '  ██╔══╝   ██║      ██╔══██║ ██╔══██╗ ██╔══╝  ',
+                    '  ██║      ███████╗ ██║  ██║ ██║  ██║ ███████╗',
+                    '  ╚═╝      ╚══════╝ ╚═╝  ╚═╝ ╚═╝  ╚═╝ ╚══════╝',
                 ];
 
-                $colors = [
-                    '255;100;50',
-                    '255;120;40',
-                    '255;140;30',
-                    '255;160;20',
-                    '255;180;10',
-                    '255;200;0',
-                ];
+                $gradient = [49, 43, 37, 99, 135, 93];
+
+                $command->line('');
 
                 foreach ($lines as $i => $line) {
-                    $command->line("\e[38;2;{$colors[$i]}m{$line}\e[0m");
+                    $command->line("\e[38;5;{$gradient[$i]}m{$line}\e[0m");
                 }
 
                 $command->line('');
-                $command->line('  ✦ Catch errors. Fix slowdowns. :: flareapp.io ✦');
+
+                $tagline = ' ✦ Catch errors. Fix slowdowns. :: flareapp.io ✦ ';
+                $command->line("\e[48;5;{$gradient[0]}m\e[30m\e[1m{$tagline}\e[0m");
+
+                $command->line('');
             });
     }
 

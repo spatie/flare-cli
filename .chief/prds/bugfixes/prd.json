@@ -26,7 +26,8 @@
         "Blank line before and after the ASCII art, blank line after the tagline"
       ],
       "priority": 2,
-      "passes": false
+      "passes": true,
+      "inProgress": false
     },
     {
       "id": "US-003",
