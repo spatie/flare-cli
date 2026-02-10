@@ -3,7 +3,9 @@
 namespace App\Providers;
 
 use App\Services\CredentialStore;
+use App\Services\FlareDescriber;
 use Illuminate\Support\ServiceProvider;
+use NunoMaduro\LaravelConsoleSummary\Contracts\DescriberContract;
 use Spatie\OpenApiCli\OpenApiCli;
 
 class AppServiceProvider extends ServiceProvider
@@ -13,6 +15,8 @@ class AppServiceProvider extends ServiceProvider
      */
     public function boot(): void
     {
+        $this->app->singleton(DescriberContract::class, FlareDescriber::class);
+
         OpenApiCli::register(
             specPath: resource_path('openapi/flare-api.yaml'),
             prefix: 'flare',

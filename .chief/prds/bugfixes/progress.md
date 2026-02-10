@@ -4,6 +4,8 @@
 - Commit only story-specific files — other modified files (README, progress.md from other PRDs) may be dirty from prior iterations
 - Banner gradient array: `[49, 43, 37, 99, 135, 93]` (256-color ANSI) — used for foreground on ASCII art and background on tagline
 - `BannerTest` only checks for `flareapp.io` — resilient to art/color changes
+- `DescriberContract` is bound as a singleton by `LaravelConsoleSummaryServiceProvider::register()` — re-bind in `AppServiceProvider::boot()` to override
+- `Describer::describeTitle()` returns `DescriberContract` for fluent chaining — subclasses must maintain this pattern
 
 ---
 
@@ -39,4 +41,26 @@
   - US-004 can `use RendersBanner` and call `$this->renderBanner($this->output)` in LoginCommand
   - US-005 FlareDescriber can `use RendersBanner` and call `$this->renderBanner($output)` in describeTitle()
   - US-006 can update AppServiceProvider banner callback to instantiate/use the trait
+---
+
+## 2026-02-10 - US-004
+- What was implemented: Added the `RendersBanner` trait to `LoginCommand` so the Flare banner displays at the top of the login command output before the token prompt
+- Files changed:
+  - `app/Commands/LoginCommand.php` — added `use RendersBanner` trait, added `$this->renderBanner($this->output)` call at the start of `handle()`
+- **Learnings for future iterations:**
+  - `$this->output` in a Laravel Zero Command is a `Symfony\Component\Console\Output\OutputInterface` — compatible with the `RendersBanner` trait's signature
+  - The `expectsOutput()` test assertions work on `$this->info()` / `$this->error()` output and are not affected by `$output->writeln()` calls from the banner — no test changes needed
+  - The banner renders before `$this->secret()` prompt, so the user sees the branding first
+---
+
+## 2026-02-10 - US-005
+- What was implemented: Created `FlareDescriber` class that extends the default `Describer` to show the Flare banner when running `flare` with no subcommand. Re-bound `DescriberContract` in `AppServiceProvider::boot()`.
+- Files changed:
+  - `app/Services/FlareDescriber.php` — new class extending `Describer`, uses `RendersBanner` trait, overrides `describeTitle()` to render banner before calling parent
+  - `app/Providers/AppServiceProvider.php` — added singleton re-binding of `DescriberContract` to `FlareDescriber` in `boot()`
+- **Learnings for future iterations:**
+  - `DescriberContract` is a singleton bound by `LaravelConsoleSummaryServiceProvider::register()` — re-bind in your own `boot()` to override (boot runs after register)
+  - `Describer::describeTitle()` returns `DescriberContract` for method chaining — subclass overrides must maintain this return type
+  - The `Describer` constructor requires `Repository $config` — extending the class inherits this DI automatically via Laravel's container
+  - No new tests needed — the existing `BannerTest` covers `flare:list` and the binding swap is straightforward
 ---
