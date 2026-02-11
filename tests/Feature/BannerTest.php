@@ -1,7 +1,7 @@
 <?php
 
-it('displays the tagline in flare:list output', function () {
-    $this->artisan('flare:list')
+it('displays the tagline in default output', function () {
+    $this->artisan('list')
         ->expectsOutputToContain('flareapp.io')
         ->assertExitCode(0);
 });

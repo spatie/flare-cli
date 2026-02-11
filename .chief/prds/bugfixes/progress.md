@@ -6,6 +6,7 @@
 - `BannerTest` only checks for `flareapp.io` — resilient to art/color changes
 - `DescriberContract` is bound as a singleton by `LaravelConsoleSummaryServiceProvider::register()` — re-bind in `AppServiceProvider::boot()` to override
 - `Describer::describeTitle()` returns `DescriberContract` for fluent chaining — subclasses must maintain this pattern
+- Anonymous class with `use Trait` pattern works well for using traits in closures (e.g., banner callback)
 
 ---
 
@@ -63,4 +64,15 @@
   - `Describer::describeTitle()` returns `DescriberContract` for method chaining — subclass overrides must maintain this return type
   - The `Describer` constructor requires `Repository $config` — extending the class inherits this DI automatically via Laravel's container
   - No new tests needed — the existing `BannerTest` covers `flare:list` and the binding swap is straightforward
+---
+
+## 2026-02-10 - US-006
+- What was implemented: Updated the `.banner()` callback in `AppServiceProvider` to delegate to the shared `RendersBanner` trait instead of duplicating the banner rendering logic inline
+- Files changed:
+  - `app/Providers/AppServiceProvider.php` — replaced 22 lines of inline banner rendering with an anonymous class using `RendersBanner` trait and calling `$renderer->renderBanner($command->getOutput())`
+- **Learnings for future iterations:**
+  - To use a trait inside a closure/callback, create an anonymous class: `new class { use MyTrait; }`
+  - `$command->getOutput()` returns the `OutputInterface` needed by `RendersBanner::renderBanner()`
+  - Pint enforces `braces_position` — anonymous class opening brace must be on its own line
+  - All three banner locations (login, default flare, flare:list) now share the same `RendersBanner` trait — single source of truth
 ---

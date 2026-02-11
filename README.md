@@ -1,41 +1,71 @@
-<p align="center">
-    <img title="Laravel Zero" height="100" src="https://raw.githubusercontent.com/laravel-zero/docs/master/images/logo/laravel-zero-readme.png" alt="Laravel Zero Logo" />
-</p>
+# Flare CLI
 
-<p align="center">
-  <a href="https://github.com/laravel-zero/framework/actions"><img src="https://github.com/laravel-zero/laravel-zero/actions/workflows/tests.yml/badge.svg" alt="Build Status" /></a>
-  <a href="https://packagist.org/packages/laravel-zero/framework"><img src="https://img.shields.io/packagist/dt/laravel-zero/framework.svg" alt="Total Downloads" /></a>
-  <a href="https://packagist.org/packages/laravel-zero/framework"><img src="https://img.shields.io/packagist/v/laravel-zero/framework.svg?label=stable" alt="Latest Stable Version" /></a>
-  <a href="https://packagist.org/packages/laravel-zero/framework"><img src="https://img.shields.io/packagist/l/laravel-zero/framework.svg" alt="License" /></a>
-</p>
+A command-line tool for [Flare](https://flareapp.io) — interact with the Flare API from your terminal.
 
-Laravel Zero was created by [Nuno Maduro](https://github.com/nunomaduro) and [Owen Voke](https://github.com/owenvoke), and is a micro-framework that provides an elegant starting point for your console application. It is an **unofficial** and customized version of Laravel optimized for building command-line applications.
+## Installation
 
-- Built on top of the [Laravel](https://laravel.com) components.
-- Optional installation of Laravel [Eloquent](https://laravel-zero.com/docs/database/), Laravel [Logging](https://laravel-zero.com/docs/logging/) and many others.
-- Supports interactive [menus](https://laravel-zero.com/docs/build-interactive-menus/) and [desktop notifications](https://laravel-zero.com/docs/send-desktop-notifications/) on Linux, Windows & MacOS.
-- Ships with a [Scheduler](https://laravel-zero.com/docs/task-scheduling/) and  a [Standalone Compiler](https://laravel-zero.com/docs/build-a-standalone-application/).
-- Integration with [Collision](https://github.com/nunomaduro/collision) - Beautiful error reporting
-- Follow the creator Nuno Maduro:
-    - YouTube: **[youtube.com/@nunomaduro](https://www.youtube.com/@nunomaduro)** — Videos every weekday
-    - Twitch: **[twitch.tv/enunomaduro](https://www.twitch.tv/enunomaduro)** — Streams (almost) every weekday
-    - Twitter / X: **[x.com/enunomaduro](https://x.com/enunomaduro)**
-    - LinkedIn: **[linkedin.com/in/nunomaduro](https://www.linkedin.com/in/nunomaduro)**
-    - Instagram: **[instagram.com/enunomaduro](https://www.instagram.com/enunomaduro)**
-    - Tiktok: **[tiktok.com/@enunomaduro](https://www.tiktok.com/@enunomaduro)**
+```bash
+composer global require spatie/flare-cli
+```
 
-------
+## Usage
 
-## Documentation
+### Authentication
 
-For full documentation, visit [laravel-zero.com](https://laravel-zero.com/).
+```bash
+# Log in with your Flare API token
+flare login
 
-## Support the development
-**Do you like this project? Support it by donating**
+# Log out
+flare logout
+```
 
-- PayPal: [Donate](https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=66BYDWAT92N6L)
-- Patreon: [Donate](https://www.patreon.com/nunomaduro)
+Get your API token at [flareapp.io/settings/api-tokens](https://flareapp.io/settings/api-tokens).
+
+### Commands
+
+```bash
+# List all available commands
+flare flare:list
+
+# List projects
+flare flare:list-projects
+
+# List errors for a project
+flare flare:list-project-errors --project-id=123
+
+# Resolve an error
+flare flare:resolve-error --error-id=456
+
+# Create a project
+flare flare:create-project --field name="My App" --field team_id=1 --field stage=production --field technology=Laravel
+```
+
+Every Flare API endpoint has a corresponding command. Run `flare flare:list` to see them all.
+
+## Development
+
+Requires the `spatie/laravel-openapi-cli` package to be cloned alongside this repo:
+
+```bash
+git clone git@github.com:spatie/laravel-openapi-cli.git
+git clone git@github.com:spatie/flare-cli.git
+cd flare-cli
+composer update
+```
+
+### Running tests
+
+```bash
+./vendor/bin/pest
+```
+
+### Building the PHAR
+
+```bash
+php flare app:build flare
+```
 
 ## License
 
-Laravel Zero is an open-source software licensed under the MIT license.
+The MIT License (MIT). Please see [License File](LICENSE.md) for more information.

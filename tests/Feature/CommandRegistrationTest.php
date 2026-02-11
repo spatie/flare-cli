@@ -5,11 +5,10 @@ it('registers key API commands from the OpenAPI spec', function (string $command
 
     expect($commands)->toContain($command);
 })->with([
-    'flare:list-projects',
-    'flare:resolve-error',
-    'flare:list-error-occurrences',
-    'flare:get-authenticated-user',
-    'flare:create-project',
-    'flare:delete-project',
-    'flare:list',
+    'list-projects',
+    'resolve-error',
+    'list-error-occurrences',
+    'get-authenticated-user',
+    'create-project',
+    'delete-project',
 ]);

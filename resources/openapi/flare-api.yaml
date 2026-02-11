@@ -1373,6 +1373,23 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/project'
+  /projects/{project_id}:
+    delete:
+      operationId: delete-project
+      tags:
+        - projects
+      summary: Delete a project.
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          schema:
+            type:
+              - integer
+          description: The project identifier.
+      responses:
+        '204':
+          description: Successful response
   /projects/{project_id}/errors:
     get:
       operationId: list-project-errors
@@ -1516,22 +1533,6 @@ paths:
                           - array
                         items:
                           $ref: '#/components/schemas/error'
-    delete:
-      operationId: delete-project
-      tags:
-        - projects
-      summary: Delete a project.
-      parameters:
-        - in: path
-          name: project_id
-          required: true
-          schema:
-            type:
-              - integer
-          description: The project identifier.
-      responses:
-        '204':
-          description: Successful response
   /projects/{project_id}/error-count:
     get:
       operationId: get-project-error-count

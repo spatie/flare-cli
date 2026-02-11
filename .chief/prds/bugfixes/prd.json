@@ -79,7 +79,7 @@
         "`flare:list` banner output is identical to login and default `flare` output"
       ],
       "priority": 6,
-      "passes": false
+      "passes": true
     }
   ]
 }

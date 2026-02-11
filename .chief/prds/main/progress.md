@@ -21,6 +21,10 @@
 - Box (PHAR builder) does NOT follow symlinks — use `"symlink": false` in the path repository config so files are mirrored
 - `box.json` must have `"main": "flare"` explicitly set for PHAR builds
 - The `/builds` directory is gitignored — PHAR output goes to `builds/flare`
+- Tests isolate CredentialStore by overriding `$_SERVER['HOME']` to a temp dir — no class modification needed
+- Use `$this->app->instance(Class::class, $instance)` to swap singleton bindings in tests
+- `Http::fake()` with a closure throwing `ConnectionException` simulates network failures
+- `expectsQuestion()` works for `$this->secret()` prompts in command tests
 
 ---
 
@@ -123,4 +127,23 @@
   - The `app:build` command does `composer install --no-dev` during build, then restores after. Dev dependencies are excluded from the PHAR automatically.
   - The built PHAR is ~24MB (compressed with GZ), contains ~7180 files, and correctly bundles the OpenAPI spec, all app code, and vendor dependencies.
   - Only commit the specific files for the story — `README.md` changes were pre-existing and should not be included.
+---
+
+## 2026-02-10 - US-009
+- What was implemented: Integration tests covering core CLI functionality using Pest
+- Files changed:
+  - `tests/Feature/CredentialStoreTest.php` — 6 tests: read/write/flush cycle, null when missing, directory creation, pretty-print JSON
+  - `tests/Feature/LoginCommandTest.php` — 3 tests: successful login stores credentials, invalid token shows error, network failure shows connection error
+  - `tests/Feature/LogoutCommandTest.php` — 1 test: clears credentials and shows confirmation
+  - `tests/Feature/UnauthenticatedCommandTest.php` — 1 test: API command without credentials exits with failure code
+  - `tests/Feature/CommandRegistrationTest.php` — 7 parameterized tests: smoke test that key commands exist in Artisan
+  - `tests/Feature/BannerTest.php` — 1 test: flare:list output contains tagline
+- **Learnings for future iterations:**
+  - CredentialStore uses `$_SERVER['HOME']` — tests can override this to point to a temp directory for isolation without needing to modify the class
+  - `$this->app->instance(CredentialStore::class, $store)` replaces the singleton binding with a test-specific instance
+  - `Http::fake()` with closures can throw `ConnectionException` to simulate network failures
+  - `expectsQuestion()` works for `$this->secret()` prompts — Pest/Laravel treats them the same as `ask()`
+  - The openapi-cli package shows `HTTP {statusCode} Error` for 4xx/5xx responses — there's no special "run flare login" message for unauthenticated requests
+  - Parameterized tests with `->with([...])` work cleanly for smoke-testing multiple command registrations
+  - All 20 tests pass in ~3s — no issues with the openapi-cli spec parsing during test boot
 ---

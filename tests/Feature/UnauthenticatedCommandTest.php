@@ -30,6 +30,6 @@ it('shows an error when running an API command without credentials', function ()
         'flareapp.io/api/*' => Http::response(['error' => 'Unauthorized'], 401),
     ]);
 
-    $this->artisan('flare:list-projects')
+    $this->artisan('list-projects')
         ->assertExitCode(1);
 });
