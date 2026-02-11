@@ -19,6 +19,9 @@ class LoginCommand extends Command
     {
         $this->renderBanner($this->output);
 
+        $this->line('You can generate a token at <href=https://flareapp.io/account/api-tokens>https://flareapp.io/account/api-tokens</>');
+        $this->newLine();
+
         $token = $this->secret('Enter your Flare API token');
 
         if (! $token) {
