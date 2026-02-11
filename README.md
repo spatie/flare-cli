@@ -1,5 +1,10 @@
 # Flare CLI
 
+[![Latest Version on Packagist](https://img.shields.io/packagist/v/spatie/flare-cli.svg?style=flat-square)](https://packagist.org/packages/spatie/flare-cli)
+[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/spatie/flare-cli/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/spatie/flare-cli/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/spatie/flare-cli/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/spatie/flare-cli/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
+[![Total Downloads](https://img.shields.io/packagist/dt/spatie/flare-cli.svg?style=flat-square)](https://packagist.org/packages/spatie/flare-cli)
+
 A command-line tool for [Flare](https://flareapp.io) — interact with the Flare API from your terminal.
 
 ## Installation
@@ -43,19 +48,28 @@ flare create-project --field name="My App" --field team_id=1 --field stage=produ
 
 Every Flare API endpoint has a corresponding command. Run `flare list` to see them all.
 
-## Development
-
-### Running tests
+## Testing
 
 ```bash
-./vendor/bin/pest
+composer test
 ```
 
-### Building the PHAR
+## Changelog
 
-```bash
-php flare app:build flare
-```
+Please see [CHANGELOG](CHANGELOG.md) for more information on what has changed recently.
+
+## Contributing
+
+Please see [CONTRIBUTING](https://github.com/spatie/.github/blob/main/CONTRIBUTING.md) for details.
+
+## Security Vulnerabilities
+
+Please review [our security policy](../../security/policy) on how to report security vulnerabilities.
+
+## Credits
+
+- [Alex Vanderbist](https://github.com/alexvanderbist)
+- [All Contributors](../../contributors)
 
 ## License
 

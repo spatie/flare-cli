@@ -1,6 +1,16 @@
 /vendor
 /builds
+/build
+/coverage
 /.idea
 /.vscode
-/.vagrant
+/.fleet
+/.chief
+/.ralph
 .phpunit.result.cache
+.phpunit.cache
+phpunit.xml
+phpstan.neon
+_ide_helper.php
+_ide_helper_models.php
+.phpstorm.meta.php

@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question
+    url: https://github.com/spatie/flare-cli/discussions
+    about: Ask the community for help
+  - name: Security vulnerability
+    url: https://github.com/spatie/flare-cli/security/policy
+    about: Review our security policy
