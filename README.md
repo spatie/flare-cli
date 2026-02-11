@@ -26,33 +26,24 @@ Get your API token at [flareapp.io/settings/api-tokens](https://flareapp.io/sett
 
 ```bash
 # List all available commands
-flare flare:list
+flare list
 
 # List projects
-flare flare:list-projects
+flare list-projects
 
 # List errors for a project
-flare flare:list-project-errors --project-id=123
+flare list-project-errors --project-id=123
 
 # Resolve an error
-flare flare:resolve-error --error-id=456
+flare resolve-error --error-id=456
 
 # Create a project
-flare flare:create-project --field name="My App" --field team_id=1 --field stage=production --field technology=Laravel
+flare create-project --field name="My App" --field team_id=1 --field stage=production --field technology=Laravel
 ```
 
-Every Flare API endpoint has a corresponding command. Run `flare flare:list` to see them all.
+Every Flare API endpoint has a corresponding command. Run `flare list` to see them all.
 
 ## Development
-
-Requires the `spatie/laravel-openapi-cli` package to be cloned alongside this repo:
-
-```bash
-git clone git@github.com:spatie/laravel-openapi-cli.git
-git clone git@github.com:spatie/flare-cli.git
-cd flare-cli
-composer update
-```
 
 ### Running tests
 
