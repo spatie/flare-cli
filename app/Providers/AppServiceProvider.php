@@ -19,13 +19,13 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(DescriberContract::class, FlareDescriber::class);
 
-        OpenApiCli::register(specPath: resource_path("openapi/flare-api.yaml"))
+        OpenApiCli::register(specPath: resource_path('openapi/flare-api.yaml'))
             ->useOperationIds()
-            ->auth(fn() => app(CredentialStore::class)->getToken())
+            ->auth(fn () => app(CredentialStore::class)->getToken())
             ->onError(function (Response $response, Command $command) {
                 if ($response->status() === 401) {
                     $command->error(
-                        "Your API token is invalid or expired. Run `flare login` to authenticate.",
+                        'Your API token is invalid or expired. Run `flare login` to authenticate.',
                     );
 
                     return true;
