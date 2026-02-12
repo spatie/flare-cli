@@ -1,5 +1,5 @@
 /vendor
-/builds
+!/builds
 /build
 /coverage
 /.idea
