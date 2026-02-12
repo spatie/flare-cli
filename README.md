@@ -13,6 +13,12 @@ A command-line tool for [Flare](https://flareapp.io) — interact with the Flare
 composer global require spatie/flare-cli
 ```
 
+Make sure Composer's global bin directory is in your `PATH`. You can find the path with:
+
+```bash
+composer global config bin-dir --absolute
+```
+
 ## Usage
 
 ### Authentication
@@ -53,6 +59,28 @@ Every Flare API endpoint has a corresponding command. Run `flare list` to see th
 ```bash
 composer test
 ```
+
+## Releasing a new version
+
+1. **Build the PHAR**:
+
+    ```bash
+    php flare app:build flare --build-version=1.x.x
+    ```
+
+    This bakes the version into `builds/flare`. If you omit `--build-version`, it will prompt you (defaulting to the latest git tag).
+
+2. **Commit and push**:
+
+    ```bash
+    git add builds/flare
+    git commit -m "Release v1.x.x"
+    git push origin main
+    ```
+
+3. **Create a release** in the GitHub UI — this creates the tag, triggers Packagist, and automatically updates the changelog.
+
+Users install or update with `composer global require spatie/flare-cli`.
 
 ## Changelog
 
