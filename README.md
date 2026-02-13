@@ -35,24 +35,74 @@ Get your API token at [flareapp.io/settings/api-tokens](https://flareapp.io/sett
 
 ### Commands
 
-```bash
-# List all available commands
-flare list
+Every Flare API endpoint has a corresponding command. Run `flare list` to see them all, or `flare <command> --help` for details on a specific command.
 
-# List projects
+#### Projects
+
+```bash
+# List all projects
 flare list-projects
 
-# List errors for a project
+# Create a new project
+flare create-project --field name="My App" --field team_id=1 --field stage=production --field technology=Laravel
+
+# Delete a project
+flare delete-project --project-id=123
+```
+
+#### Errors
+
+```bash
+# List errors within a project
 flare list-project-errors --project-id=123
+
+# Get error occurrence details
+flare get-error-occurrence --error-occurrence-id=456
+
+# List all occurrences for an error
+flare list-error-occurrences --error-id=789
+
+# Get error count for a project in a given period
+flare get-project-error-count --project-id=123
+
+# Get error occurrence count for a project in a given period
+flare get-project-error-occurrence-count --project-id=123
 
 # Resolve an error
 flare resolve-error --error-id=456
 
-# Create a project
-flare create-project --field name="My App" --field team_id=1 --field stage=production --field technology=Laravel
+# Reopen an error
+flare unresolve-error --error-id=456
+
+# Snooze an error
+flare snooze-error --error-id=456
+
+# Unsnooze an error
+flare unsnooze-error --error-id=456
 ```
 
-Every Flare API endpoint has a corresponding command. Run `flare list` to see them all.
+#### Teams & Users
+
+```bash
+# Get team details
+flare get-team --team-id=1
+
+# Remove a user from a team
+flare remove-team-user --team-id=1 --user-id=2
+
+# Get the authenticated user
+flare get-authenticated-user
+```
+
+## Agent Skill
+
+This repository includes an [agent skill](https://skills.sh) that teaches coding agents how to use the Flare CLI.
+
+### Install
+
+```bash
+npx skills add spatie/flare-cli
+```
 
 ## Testing
 
