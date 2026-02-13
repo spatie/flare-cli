@@ -2,9 +2,9 @@
 name: flare
 description: >-
   Manage Flare error tracking using the flare CLI. Use when the user wants to
-  list, triage, resolve, snooze, or debug errors; manage projects; check error
-  counts; set up Flare in a PHP/Laravel project; or interact with flareapp.io
-  from the command line.
+  list, triage, resolve, snooze, or debug errors; manage projects; create
+  projects and retrieve API keys; check error counts; or interact with
+  flareapp.io from the command line.
 license: MIT
 metadata:
   author: spatie
@@ -183,9 +183,9 @@ flare list-error-occurrences --error-id=456 --sort=-received_at --page-size=1
 # 4. Check attributes for request context, events for log trail, solutions for fixes
 ```
 
-### Set up Flare in a project
+### Create a project and get API keys
 
-Install `spatie/laravel-flare`, configure the API key, and verify via CLI. See [references/workflows.md](references/workflows.md) for the full setup guide.
+Create a project via CLI, retrieve API keys, and verify errors are flowing. See [references/workflows.md](references/workflows.md) for the step-by-step guide.
 
 ## Output format
 

@@ -185,68 +185,59 @@ flare unsnooze-error --error-id=456
 
 ---
 
-## Set up Flare in a Laravel project
+## Create a project and get API keys
 
-### Step 1: Install the package
-
-```bash
-composer require spatie/laravel-flare
-```
-
-This installs Flare's error reporter and auto-registers the service provider.
-
-### Step 2: Get a Flare API key
-
-If you already know the project ID:
+### Step 1: Find your team ID
 
 ```bash
-# List projects to find the API key
-flare list-projects --filter-id=123
-```
-
-The response includes `api_key` — that's what you need.
-
-If you need a new project:
-
-```bash
-# First, find your team ID
 flare get-authenticated-user
-# Note the team ID from the teams array
+```
 
-# Create the project
+The response includes a `teams` array — note the `id` of the team you want to create the project in.
+
+### Step 2: Create the project
+
+```bash
 flare create-project --field name="My App" --field team_id=1 --field stage=production --field technology=Laravel
 ```
 
-The response includes the `api_key`.
+**`technology`** values: `Laravel`, `PHP`, `JS`, `Vue`, `React`
 
-### Step 3: Configure the environment
+**`stage`** values: `local`, `development`, `staging`, `production`
 
-Add the API key to your `.env`:
+### Step 3: Retrieve the API keys
 
-```
-FLARE_KEY=your-api-key-here
-```
+The `create-project` response includes two keys:
 
-The `spatie/laravel-flare` package reads `FLARE_KEY` automatically.
+- **`api_key`** — for server-side SDKs (PHP, Laravel). Set as the `FLARE_KEY` environment variable.
+- **`api_public_key`** — for client-side SDKs (JavaScript). Used in `flare.light()`.
 
-### Step 4: Verify
-
-Trigger a test error and check that it appears:
+To find keys for an existing project:
 
 ```bash
-# Check error count (use a recent date range)
+# List all projects
+flare list-projects
+
+# Search by name
+flare list-projects --filter-name="My App"
+```
+
+The project object in the response contains both `api_key` and `api_public_key`.
+
+For instructions on installing the SDK in your application, see the Flare docs for your technology:
+
+- **Laravel**: https://flareapp.io/docs/laravel
+- **PHP**: https://flareapp.io/docs/php
+- **JavaScript / React / Vue**: https://flareapp.io/docs/javascript
+
+### Step 4: Verify errors are flowing
+
+Once your application is configured and sending errors:
+
+```bash
+# Check error count
 flare get-project-error-count --project-id=123 --start-date=2025-01-01T00:00:00Z --end-date=2025-12-31T23:59:59Z
 
 # Or list recent errors
 flare list-project-errors --project-id=123 --sort=-last_seen_at --page-size=5
 ```
-
-### For non-Laravel PHP projects
-
-Use `spatie/flare-client-php` instead:
-
-```bash
-composer require spatie/flare-client-php
-```
-
-See the [Flare docs](https://flareapp.io/docs/general/projects) for framework-specific setup instructions.
