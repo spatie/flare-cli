@@ -7,6 +7,8 @@
 
 A command-line tool for [Flare](https://flareapp.io) — interact with the Flare API from your terminal.
 
+![Flare CLI](art/screenshot.png)
+
 ## Installation
 
 ```bash
