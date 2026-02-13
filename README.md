@@ -37,62 +37,26 @@ Get your API token at [flareapp.io/settings/api-tokens](https://flareapp.io/sett
 
 ### Commands
 
-Every Flare API endpoint has a corresponding command. Run `flare list` to see them all, or `flare <command> --help` for details on a specific command.
-
-#### Projects
+Every Flare API endpoint has a corresponding command. Run `flare <command> --help` for details on a specific command.
 
 ```bash
-# List all projects
 flare list-projects
-
-# Create a new project
 flare create-project --field name="My App" --field team_id=1 --field stage=production --field technology=Laravel
+flare delete-project --project-id=<id>
 
-# Delete a project
-flare delete-project --project-id=123
-```
+flare list-project-errors --project-id=<id>
+flare list-error-occurrences --error-id=<id>
+flare get-error-occurrence --occurrence-id=<id>
+flare get-project-error-count --project-id=<id> --start-date=<date> --end-date=<date>
+flare get-project-error-occurrence-count --project-id=<id> --start-date=<date> --end-date=<date>
 
-#### Errors
+flare resolve-error --error-id=<id>
+flare unresolve-error --error-id=<id>
+flare snooze-error --error-id=<id>
+flare unsnooze-error --error-id=<id>
 
-```bash
-# List errors within a project
-flare list-project-errors --project-id=123
-
-# Get error occurrence details
-flare get-error-occurrence --error-occurrence-id=456
-
-# List all occurrences for an error
-flare list-error-occurrences --error-id=789
-
-# Get error count for a project in a given period
-flare get-project-error-count --project-id=123
-
-# Get error occurrence count for a project in a given period
-flare get-project-error-occurrence-count --project-id=123
-
-# Resolve an error
-flare resolve-error --error-id=456
-
-# Reopen an error
-flare unresolve-error --error-id=456
-
-# Snooze an error
-flare snooze-error --error-id=456
-
-# Unsnooze an error
-flare unsnooze-error --error-id=456
-```
-
-#### Teams & Users
-
-```bash
-# Get team details
-flare get-team --team-id=1
-
-# Remove a user from a team
-flare remove-team-user --team-id=1 --user-id=2
-
-# Get the authenticated user
+flare get-team --team-id=<id>
+flare remove-team-user --team-id=<id> --user-id=<id>
 flare get-authenticated-user
 ```
 
