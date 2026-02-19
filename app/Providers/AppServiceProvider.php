@@ -19,8 +19,9 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(DescriberContract::class, FlareDescriber::class);
 
-        OpenApiCli::register(specPath: resource_path('openapi/flare-api.yaml'))
+        OpenApiCli::register(specPath: 'https://flareapp.io/downloads/flare-api.yaml')
             ->useOperationIds()
+            ->cache(ttl: 60 * 60 * 24)
             ->auth(fn () => app(CredentialStore::class)->getToken())
             ->onError(function (Response $response, Command $command) {
                 if ($response->status() === 401) {
