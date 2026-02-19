@@ -67,7 +67,7 @@ This repository includes an [agent skill](https://skills.sh) that teaches coding
 ### Install
 
 ```bash
-npx skills add spatie/flare-cli
+flare install-skill
 ```
 
 ## Testing
