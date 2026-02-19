@@ -1,10 +1,12 @@
 ---
 name: flare
 description: >-
-  Manage Flare error tracking using the flare CLI. Use when the user wants to
-  list, triage, resolve, snooze, or debug errors; manage projects; create
-  projects and retrieve API keys; check error counts; or interact with
-  flareapp.io from the command line.
+  Manage Flare error tracking and performance monitoring using the flare CLI.
+  Use when the user wants to list, triage, resolve, snooze, or debug errors;
+  manage projects; create projects and retrieve API keys; check error counts;
+  investigate slow routes, queries, jobs, or commands; view aggregated
+  performance data and traces; or interact with flareapp.io from the command
+  line.
 license: MIT
 metadata:
   author: spatie
@@ -13,7 +15,7 @@ metadata:
 
 # Flare CLI
 
-The `flare` CLI lets you manage [Flare](https://flareapp.io) error tracking from the terminal. Every Flare API endpoint has a corresponding command.
+The `flare` CLI lets you manage [Flare](https://flareapp.io) error tracking and performance monitoring from the terminal. Every Flare API endpoint has a corresponding command.
 
 ## Prerequisites
 
@@ -139,6 +141,35 @@ flare list-error-occurrences --error-id=456 --sort=received_at
 flare get-error-occurrence --occurrence-id=789
 ```
 
+### Performance monitoring
+
+The `--type` parameter accepts: `routes`, `queries`, `jobs`, `commands`, `external-http`, `views`, `livewire-components`.
+
+The `--filter-interval` parameter accepts: `1h`, `3h`, `6h`, `24h` (default), `48h`, `7d`, `14d`.
+
+```bash
+# Get a performance summary for a project (metrics + trends + top-10 slowest)
+flare get-monitoring-summary --project-id=123
+
+# List aggregated performance data for routes (paginated, sortable, filterable)
+flare list-monitoring-aggregations --project-id=123 --type=routes --sort=-p95
+
+# Filter aggregations — operators: =, !=, >, >=, <, <= (quote the value)
+flare list-monitoring-aggregations --project-id=123 --type=queries --filter-p95=">= 500"
+
+# Get time series data for a monitoring type
+flare get-monitoring-time-series --project-id=123 --type=routes --filter-interval=7d
+
+# Get details for a specific aggregation (e.g. a single route or query)
+flare get-monitoring-aggregation --type=routes --uuid=<uuid> --include=parents,children
+
+# List traces for an aggregation (slowest first by default)
+flare list-aggregation-traces --type=routes --uuid=<uuid> --sort=slowest
+
+# Get a full trace with span tree, events, resources, and contexts
+flare get-trace --trace-id=<trace-id>
+```
+
 ### Pagination
 
 All list commands support pagination:
@@ -183,6 +214,29 @@ flare list-error-occurrences --error-id=456 --sort=-received_at --page-size=1
 # 4. Check attributes for request context, events for log trail, solutions for fixes
 ```
 
+### Investigate slow performance
+
+Get a performance overview, drill into slow aggregations, and inspect individual traces. See [references/workflows.md](references/workflows.md) for the full workflow.
+
+Quick version:
+
+```bash
+# 1. Get the performance summary
+flare get-monitoring-summary --project-id=123 --filter-interval=24h
+
+# 2. List the slowest routes by p95
+flare list-monitoring-aggregations --project-id=123 --type=routes --sort=-p95
+
+# 3. Get details on a specific slow route
+flare get-monitoring-aggregation --type=routes --uuid=<uuid> --include=children
+
+# 4. List traces for that route, slowest first
+flare list-aggregation-traces --type=routes --uuid=<uuid>
+
+# 5. Inspect the slowest trace
+flare get-trace --trace-id=<trace-id>
+```
+
 ### Create a project and get API keys
 
 Create a project via CLI, retrieve API keys, and verify errors are flowing. See [references/workflows.md](references/workflows.md) for the step-by-step guide.
@@ -197,3 +251,5 @@ All commands return JSON. When presenting results to the user:
 - **Attributes**: Group by the `group` field (e.g., request, user, environment) when displaying context.
 - **Events**: Show chronologically — they represent the execution trail leading to the error (queries, logs, jobs, etc.).
 - **Flare URLs**: Include `latest_occurrence_url_on_flare` so the user can view the full error in the Flare dashboard.
+- **Monitoring aggregations**: Show as a table with columns: name/label, p95, average, count, error rate. Highlight aggregations with high p95 or error rate.
+- **Traces**: Show the span tree hierarchically. Highlight spans with the longest duration — these are the bottlenecks.

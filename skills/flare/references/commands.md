@@ -287,6 +287,162 @@ flare get-error-occurrence --occurrence-id=789
 
 ---
 
+## Performance monitoring
+
+### Shared parameters
+
+**`--type`** (required for most monitoring commands): `routes`, `queries`, `jobs`, `commands`, `external-http`, `views`, `livewire-components`
+
+**`--filter-interval`** (optional, default `24h`): `1h`, `3h`, `6h`, `24h`, `48h`, `7d`, `14d`
+
+### get-monitoring-summary
+
+Get a performance overview for a project: metrics and trends for routes, jobs, commands, and queries, plus the top-10 slowest routes and queries.
+
+```bash
+flare get-monitoring-summary --project-id=123
+```
+
+**Required parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `--project-id` | integer | Project ID |
+
+**Optional parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `--filter-interval` | string | Time window (default: `24h`) |
+
+**Response:** Metrics and trends per type (routes, jobs, commands, queries), plus `top_slowest_routes` and `top_slowest_queries` arrays (each up to 10 items).
+
+### list-monitoring-aggregations
+
+List aggregated performance data for a monitoring type (paginated, sortable, filterable).
+
+```bash
+flare list-monitoring-aggregations --project-id=123 --type=routes --sort=-p95
+```
+
+**Required parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `--project-id` | integer | Project ID |
+| `--type` | string | Monitoring type (see shared parameters) |
+
+**Optional parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `--filter-interval` | string | Time window (default: `24h`) |
+| `--filter-search` | string | Search by name/label |
+| `--filter-p95` | string | Filter by p95 value with operator (e.g. `">= 500"`) |
+| `--filter-average` | string | Filter by average value with operator |
+| `--filter-count` | string | Filter by request count with operator |
+| `--filter-error-rate` | string | Filter by error rate with operator |
+| `--sort` | string | Sort field: `p50`, `p90`, `p95`, `p99`, `average`, `count`, `error_rate`, `importance`. Prefix with `-` for descending (default: `-p95`) |
+| `--page-number` | integer | Page number (default: 1) |
+| `--page-size` | integer | Items per page |
+
+Filter operators: `=`, `!=`, `>`, `>=`, `<`, `<=` — quote the value, e.g. `--filter-p95=">= 500"`.
+
+**Response:** Paginated. Each aggregation has: `uuid`, `type`, `label`, `p50`, `p90`, `p95`, `p99`, `average`, `count`, `error_rate`, `trend`.
+
+### get-monitoring-time-series
+
+Get time series data for a monitoring type.
+
+```bash
+flare get-monitoring-time-series --project-id=123 --type=routes
+```
+
+**Required parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `--project-id` | integer | Project ID |
+| `--type` | string | Monitoring type (see shared parameters) |
+
+**Optional parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `--filter-interval` | string | Time window (default: `24h`) |
+| `--uuid` | string | Scope to a single aggregation UUID |
+| `--filter-search` | string | Search by name/label |
+| `--filter-p95` | string | Filter by p95 value with operator |
+
+**Response:** `precision` (minute, hour, or day) and `data[]` — array of time series points.
+
+### get-monitoring-aggregation
+
+Get details for a specific aggregation (e.g. a single route, query, or job).
+
+```bash
+flare get-monitoring-aggregation --type=routes --uuid=<uuid>
+```
+
+**Required parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `--type` | string | Monitoring type (see shared parameters) |
+| `--uuid` | string | Aggregation UUID |
+
+**Optional parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `--filter-interval` | string | Time window (default: `24h`) |
+| `--include` | string | Comma-separated: `parents`, `children` |
+
+**Response:** Aggregation detail with `uuid`, `type`, `label`, percentiles, `count`, `error_rate`, `trend`, `interval`, parent/child links. When `--include` is used, includes `parents[]` and/or `children[]` arrays.
+
+### list-aggregation-traces
+
+List traces for a specific aggregation (paginated).
+
+```bash
+flare list-aggregation-traces --type=routes --uuid=<uuid>
+```
+
+**Required parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `--type` | string | Monitoring type (see shared parameters) |
+| `--uuid` | string | Aggregation UUID |
+
+**Optional parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `--sort` | string | `slowest` (default), `fastest`, `latest`, `oldest` |
+| `--page-number` | integer | Page number (default: 1) |
+| `--page-size` | integer | Items per page |
+
+**Response:** Paginated. Each trace summary has: `trace_id`, `started_at`, `duration_ms`.
+
+### get-trace
+
+Get a full trace with its span tree.
+
+```bash
+flare get-trace --trace-id=<trace-id>
+```
+
+**Required parameters:**
+
+| Parameter | Type | Description |
+|---|---|---|
+| `--trace-id` | string | Trace ID |
+
+**Response:** Full span tree with events, resources, and contexts for each span.
+
+---
+
 ## Teams
 
 ### get-team

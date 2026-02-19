@@ -166,6 +166,90 @@ Flare's solution providers suggest fixes based on the error type. A solution inc
 
 ---
 
+## Investigate slow performance
+
+Use the monitoring commands to find performance bottlenecks, drill into specific routes or queries, and inspect individual traces.
+
+### Step 1: Get a performance overview
+
+```bash
+flare get-monitoring-summary --project-id=123 --filter-interval=24h
+```
+
+This returns metrics and trends for routes, jobs, commands, and queries, plus the top-10 slowest routes and top-10 slowest queries. Start here to understand the overall health of the application.
+
+### Step 2: List aggregations for a specific type
+
+Pick the type that looks problematic (e.g. `routes` or `queries`) and list the aggregations sorted by p95 descending:
+
+```bash
+flare list-monitoring-aggregations --project-id=123 --type=routes --sort=-p95 --filter-interval=24h
+```
+
+Present results as a table: label, p95, average, count, error rate. Focus on aggregations with high p95 values or high error rates.
+
+To filter for only slow aggregations:
+
+```bash
+flare list-monitoring-aggregations --project-id=123 --type=queries --filter-p95=">= 500" --sort=-p95
+```
+
+### Step 3: View time series for trends
+
+Check if slowness is a recent spike or a sustained pattern:
+
+```bash
+flare get-monitoring-time-series --project-id=123 --type=routes --filter-interval=7d
+```
+
+To scope to a single aggregation:
+
+```bash
+flare get-monitoring-time-series --project-id=123 --type=routes --uuid=<uuid> --filter-interval=7d
+```
+
+### Step 4: Drill into a specific aggregation
+
+Get details on a slow route, query, job, etc.:
+
+```bash
+flare get-monitoring-aggregation --type=routes --uuid=<uuid> --include=children
+```
+
+The `children` include shows what the route calls (queries, external HTTP, views, etc.) — these are often the source of slowness. The `parents` include shows what calls this aggregation.
+
+### Step 5: List traces for the aggregation
+
+```bash
+flare list-aggregation-traces --type=routes --uuid=<uuid> --sort=slowest
+```
+
+This returns trace summaries sorted by duration. Pick the slowest traces to inspect.
+
+### Step 6: Inspect a trace
+
+```bash
+flare get-trace --trace-id=<trace-id>
+```
+
+This returns the full span tree with events, resources, and contexts. Walk through the span tree to find the bottleneck:
+
+- Look for spans with the longest duration — these are the slowest operations
+- Check child spans to see where time is actually being spent
+- Review events for context (queries executed, cache operations, etc.)
+- Use resources and contexts for environment details
+
+### Step 7: Present findings
+
+Summarize for the user:
+1. **Bottleneck**: which route/query/job is slow and its p95 latency
+2. **Pattern**: whether it's a sustained issue or a recent spike (from time series)
+3. **Root cause**: what the trace reveals (e.g. slow query, N+1 problem, slow external API)
+4. **Children**: downstream operations contributing to the slowness
+5. **Recommendation**: specific actions to improve performance
+
+---
+
 ## Snooze strategies
 
 Choose the right snooze type based on the situation:

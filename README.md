@@ -58,6 +58,13 @@ flare unsnooze-error --error-id=<id>
 flare get-team --team-id=<id>
 flare remove-team-user --team-id=<id> --user-id=<id>
 flare get-authenticated-user
+
+flare get-monitoring-summary --project-id=<id>
+flare list-monitoring-aggregations --project-id=<id> --type=routes
+flare get-monitoring-time-series --project-id=<id> --type=routes
+flare get-monitoring-aggregation --type=routes --uuid=<uuid>
+flare list-aggregation-traces --type=routes --uuid=<uuid>
+flare get-trace --trace-id=<trace-id>
 ```
 
 ## Agent Skill
