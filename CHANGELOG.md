@@ -2,6 +2,13 @@
 
 All notable changes to `flare-cli` will be documented in this file.
 
+## 1.0.0 - 2026-02-19
+
+- Use remote Flare API spec (cached)
+- Add performance monitoring endpoints
+
+**Full Changelog**: https://github.com/spatie/flare-cli/compare/0.0.2...1.0.0
+
 ## 0.0.2 - 2026-02-19
 
 ### What's Changed
