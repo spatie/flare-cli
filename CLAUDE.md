@@ -30,6 +30,10 @@ A standalone CLI tool for [Flare](https://flareapp.io) built on Laravel Zero. Us
 
 The `spatie/laravel-openapi-cli` package is loaded via a Composer path repository pointing to `../laravel-openapi-cli` with symlink. Run `composer update` after cloning both repos side by side.
 
+## AI agent skill
+
+When updating the AI agent skill (e.g. filters, sorts, available commands), always verify against the actual `flare` build (`php flare list`, `php flare <command> --help`) to avoid documenting incorrect flags, filter names, or sort options.
+
 ## Important notes
 
 - Laravel Zero disables package auto-discovery. Any package service providers must be registered manually in `config/app.php`.
