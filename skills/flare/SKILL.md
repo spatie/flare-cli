@@ -100,10 +100,10 @@ flare list-project-errors --project-id=123 --filter-status=open --filter-excepti
 flare list-project-errors --project-id=123 --sort=-last_seen_at
 
 # Get error counts for a date range
-flare get-project-error-count --project-id=123 --start-date=2025-01-01T00:00:00Z --end-date=2025-01-31T23:59:59Z
+flare get-project-error-count --project-id=123 --start-date="2025-01-01 00:00:00" --end-date="2025-01-31 23:59:59"
 
 # Get occurrence counts for a date range
-flare get-project-error-occurrence-count --project-id=123 --start-date=2025-01-01T00:00:00Z --end-date=2025-01-31T23:59:59Z
+flare get-project-error-occurrence-count --project-id=123 --start-date="2025-01-01 00:00:00" --end-date="2025-01-31 23:59:59"
 ```
 
 ### Error actions
@@ -154,8 +154,8 @@ flare get-monitoring-summary --project-id=123
 # List aggregated performance data for routes (paginated, sortable, filterable)
 flare list-monitoring-aggregations --project-id=123 --type=routes --sort=-p95
 
-# Filter aggregations — operators: =, !=, >, >=, <, <= (quote the value)
-flare list-monitoring-aggregations --project-id=123 --type=queries --filter-p95=">= 500"
+# Filter aggregations — the operator is encoded in the parameter name (e.g. p95:>=), pass only the value
+flare list-monitoring-aggregations --project-id=123 --type=queries --filter-p95=500
 
 # Get time series data for a monitoring type
 flare get-monitoring-time-series --project-id=123 --type=routes --filter-interval=7d

@@ -191,7 +191,7 @@ Present results as a table: label, p95, average, count, error rate. Focus on agg
 To filter for only slow aggregations:
 
 ```bash
-flare list-monitoring-aggregations --project-id=123 --type=queries --filter-p95=">= 500" --sort=-p95
+flare list-monitoring-aggregations --project-id=123 --type=queries --filter-p95=500 --sort=-p95
 ```
 
 ### Step 3: View time series for trends
@@ -320,7 +320,7 @@ Once your application is configured and sending errors:
 
 ```bash
 # Check error count
-flare get-project-error-count --project-id=123 --start-date=2025-01-01T00:00:00Z --end-date=2025-12-31T23:59:59Z
+flare get-project-error-count --project-id=123 --start-date="2025-01-01 00:00:00" --end-date="2025-12-31 23:59:59"
 
 # Or list recent errors
 flare list-project-errors --project-id=123 --sort=-last_seen_at --page-size=5

@@ -114,7 +114,7 @@ flare list-project-errors --project-id=123
 | `--filter-first-seen-at` | string | Filter by first seen date |
 | `--filter-last-seen-at` | string | Filter by last seen date |
 | `--filter-resolved-at` | string | Filter by resolved date |
-| `--filter-seen-between` | string | Date range, e.g., `2025-01-01T00:00:00Z,2025-01-31T23:59:59Z` |
+| `--filter-seen-between` | string | Date range, e.g., `2025-01-01 00:00:00,2025-01-31 23:59:59` |
 | `--include` | string | `assignees` — include assigned users |
 | `--sort` | string | `first_seen_at`, `last_seen_at`, `-first_seen_at`, `-last_seen_at` |
 | `--page-number` | integer | Page number (default: 1) |
@@ -127,7 +127,7 @@ flare list-project-errors --project-id=123
 Get the number of unique errors in a date range.
 
 ```bash
-flare get-project-error-count --project-id=123 --start-date=2025-01-01T00:00:00Z --end-date=2025-01-31T23:59:59Z
+flare get-project-error-count --project-id=123 --start-date="2025-01-01 00:00:00" --end-date="2025-01-31 23:59:59"
 ```
 
 **Required parameters:**
@@ -135,8 +135,8 @@ flare get-project-error-count --project-id=123 --start-date=2025-01-01T00:00:00Z
 | Parameter | Type | Description |
 |---|---|---|
 | `--project-id` | integer | Project ID |
-| `--start-date` | string | Start of period (ISO 8601) |
-| `--end-date` | string | End of period (ISO 8601) |
+| `--start-date` | string | Start of period (datetime `Y-m-d H:i:s`) |
+| `--end-date` | string | End of period (datetime `Y-m-d H:i:s`) |
 
 **Response:** `{ "count": integer }`
 
@@ -145,7 +145,7 @@ flare get-project-error-count --project-id=123 --start-date=2025-01-01T00:00:00Z
 Get the number of error occurrences in a date range.
 
 ```bash
-flare get-project-error-occurrence-count --project-id=123 --start-date=2025-01-01T00:00:00Z --end-date=2025-01-31T23:59:59Z
+flare get-project-error-occurrence-count --project-id=123 --start-date="2025-01-01 00:00:00" --end-date="2025-01-31 23:59:59"
 ```
 
 **Required parameters:**
@@ -153,8 +153,8 @@ flare get-project-error-occurrence-count --project-id=123 --start-date=2025-01-0
 | Parameter | Type | Description |
 |---|---|---|
 | `--project-id` | integer | Project ID |
-| `--start-date` | string | Start of period (ISO 8601) |
-| `--end-date` | string | End of period (ISO 8601) |
+| `--start-date` | string | Start of period (datetime `Y-m-d H:i:s`) |
+| `--end-date` | string | End of period (datetime `Y-m-d H:i:s`) |
 
 **Response:** `{ "count": integer }`
 
@@ -338,15 +338,15 @@ flare list-monitoring-aggregations --project-id=123 --type=routes --sort=-p95
 |---|---|---|
 | `--filter-interval` | string | Time window (default: `24h`) |
 | `--filter-search` | string | Search by name/label |
-| `--filter-p95` | string | Filter by p95 value with operator (e.g. `">= 500"`) |
-| `--filter-average` | string | Filter by average value with operator |
-| `--filter-count` | string | Filter by request count with operator |
-| `--filter-error-rate` | string | Filter by error rate with operator |
+| `--filter-p95` | string | Filter by p95 value (operator `>=` is encoded in the API param name) |
+| `--filter-average` | string | Filter by average value (operator `>=` is encoded in the API param name) |
+| `--filter-count` | string | Filter by request count (operator `>=` is encoded in the API param name) |
+| `--filter-error-rate` | string | Filter by error rate (operator `>=` is encoded in the API param name) |
 | `--sort` | string | Sort field: `p50`, `p90`, `p95`, `p99`, `average`, `count`, `error_rate`, `importance`. Prefix with `-` for descending (default: `-p95`) |
 | `--page-number` | integer | Page number (default: 1) |
 | `--page-size` | integer | Items per page |
 
-Filter operators: `=`, `!=`, `>`, `>=`, `<`, `<=` — quote the value, e.g. `--filter-p95=">= 500"`.
+The comparison operator is encoded in the API parameter name (e.g. `filter[p95:>=]` → `--filter-p95`). Pass only the numeric value: `--filter-p95=500`.
 
 **Response:** Paginated. Each aggregation has: `uuid`, `type`, `label`, `p50`, `p90`, `p95`, `p99`, `average`, `count`, `error_rate`, `trend`.
 

@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "a2390556636e5f3179d431620f675edc",
+    "content-hash": "6bf26acd9cd7ab0968a56dfc7793525e",
     "packages": [],
     "packages-dev": [
         {
@@ -6821,16 +6821,16 @@
         },
         {
             "name": "spatie/laravel-openapi-cli",
-            "version": "0.0.1",
+            "version": "1.0.2",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/laravel-openapi-cli.git",
-                "reference": "a6d194cacf5b2def2aede7ff265cab19c566f5a8"
+                "reference": "cfb33e2c8e25f59294207ff5dbd8863454e9ef18"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/laravel-openapi-cli/zipball/a6d194cacf5b2def2aede7ff265cab19c566f5a8",
-                "reference": "a6d194cacf5b2def2aede7ff265cab19c566f5a8",
+                "url": "https://api.github.com/repos/spatie/laravel-openapi-cli/zipball/cfb33e2c8e25f59294207ff5dbd8863454e9ef18",
+                "reference": "cfb33e2c8e25f59294207ff5dbd8863454e9ef18",
                 "shasum": ""
             },
             "require": {
@@ -6889,7 +6889,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/laravel-openapi-cli/issues",
-                "source": "https://github.com/spatie/laravel-openapi-cli/tree/0.0.1"
+                "source": "https://github.com/spatie/laravel-openapi-cli/tree/1.0.2"
             },
             "funding": [
                 {
@@ -6897,7 +6897,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-02-11T13:47:09+00:00"
+            "time": "2026-02-20T14:47:19+00:00"
         },
         {
             "name": "spatie/laravel-package-tools",
@@ -9579,5 +9579,5 @@
         "php": "^8.4"
     },
     "platform-dev": {},
-    "plugin-api-version": "2.6.0"
+    "plugin-api-version": "2.9.0"
 }
