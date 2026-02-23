@@ -37,7 +37,7 @@ it('stores credentials on successful login', function () {
 
     $this->artisan('login')
         ->expectsQuestion('Enter your Flare API token', 'valid-token-123')
-        ->expectsOutput('Logged in as alex@spatie.be')
+        ->expectsOutputToContain('Successfully logged in as alex@spatie.be')
         ->assertExitCode(0);
 
     expect($this->store->getToken())->toBe('valid-token-123');
