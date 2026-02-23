@@ -47,7 +47,14 @@ class LoginCommand extends Command
         $credentials->setToken($token);
 
         $email = $response->json('email', 'unknown');
-        $this->info("Logged in as {$email}");
+
+        $this->newLine();
+        $this->info("  🎉 Successfully logged in as {$email}  ");
+        $this->newLine();
+        $this->line('The Flare CLI comes with a Claude Code skill that allows Claude to manage your errors and performance data.');
+        $this->line('Publish it with: <comment>claude skill install spatie/flare-cli</comment>');
+        $this->newLine();
+        $this->line('Learn more: <href=https://flareapp.io/docs/flare/general/using-the-cli>https://flareapp.io/docs/flare/general/using-the-cli</>');
 
         return self::SUCCESS;
     }
