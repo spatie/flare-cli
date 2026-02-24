@@ -21,6 +21,12 @@ Make sure Composer's global bin directory is in your `PATH`. You can find the pa
 composer global config bin-dir --absolute
 ```
 
+## Updating
+
+```bash
+composer global require spatie/flare-cli
+```
+
 ## Usage
 
 ### Authentication
