@@ -2,6 +2,15 @@
 
 All notable changes to `flare-cli` will be documented in this file.
 
+## 1.0.2 - 2026-02-24
+
+### What's Changed
+
+* chore(deps): Bump actions/checkout from 4 to 6 by @dependabot[bot] in https://github.com/spatie/flare-cli/pull/1
+* chore(deps): Bump stefanzweifel/git-auto-commit-action from 5 to 7 by @dependabot[bot] in https://github.com/spatie/flare-cli/pull/3
+
+**Full Changelog**: https://github.com/spatie/flare-cli/compare/1.0.1...1.0.2
+
 ## 1.0.1 - 2026-02-20
 
 - bugfixes
