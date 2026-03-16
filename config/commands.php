@@ -4,7 +4,13 @@ use Illuminate\Console\Scheduling\ScheduleFinishCommand;
 use Illuminate\Console\Scheduling\ScheduleListCommand;
 use Illuminate\Console\Scheduling\ScheduleRunCommand;
 use Illuminate\Foundation\Console\VendorPublishCommand;
+use LaravelZero\Framework\Commands\BuildCommand;
+use LaravelZero\Framework\Commands\InstallCommand;
+use LaravelZero\Framework\Commands\MakeCommand;
+use LaravelZero\Framework\Commands\RenameCommand;
 use LaravelZero\Framework\Commands\StubPublishCommand;
+use LaravelZero\Framework\Commands\TestMakeCommand;
+use NunoMaduro\Collision\Adapters\Laravel\Commands\TestCommand;
 use NunoMaduro\LaravelConsoleSummary\SummaryCommand;
 use Symfony\Component\Console\Command\DumpCompletionCommand;
 use Symfony\Component\Console\Command\HelpCommand;
@@ -66,12 +72,17 @@ return [
     'hidden' => [
         SummaryCommand::class,
         DumpCompletionCommand::class,
-        HelpCommand::class,
         ScheduleRunCommand::class,
         ScheduleListCommand::class,
         ScheduleFinishCommand::class,
         VendorPublishCommand::class,
         StubPublishCommand::class,
+        BuildCommand::class,
+        RenameCommand::class,
+        MakeCommand::class,
+        InstallCommand::class,
+        TestMakeCommand::class,
+        TestCommand::class,
     ],
 
     /*
@@ -86,7 +97,7 @@ return [
     */
 
     'remove' => [
-        //
+        HelpCommand::class,
     ],
 
 ];

@@ -2,9 +2,11 @@
 
 namespace App\Providers;
 
+use App\Commands\HelpCommand;
 use App\Services\CredentialStore;
 use App\Services\FlareDescriber;
 use App\Services\FlareUrlResolver;
+use Illuminate\Console\Application as Artisan;
 use Illuminate\Console\Command;
 use Illuminate\Http\Client\Response;
 use Illuminate\Support\ServiceProvider;
@@ -20,6 +22,10 @@ class AppServiceProvider extends ServiceProvider
     {
         $this->app->singleton(DescriberContract::class, FlareDescriber::class);
         $urlResolver = $this->app->make(FlareUrlResolver::class);
+
+        Artisan::starting(function (Artisan $artisan) {
+            $artisan->addCommand(new HelpCommand);
+        });
 
         OpenApiCli::register(specPath: 'https://flareapp.io/downloads/flare-api.yaml')
             ->useOperationIds()
