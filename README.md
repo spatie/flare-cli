@@ -32,14 +32,25 @@ composer global require spatie/flare-cli
 ### Authentication
 
 ```bash
-# Log in with your Flare API token
+# Browser-based OAuth login (default)
 flare login
 
-# Log out
+# Device-code flow — useful over SSH, in containers, or any headless terminal
+flare login --device
+
+# Paste an existing personal access token
+flare login --token
+
+# Log out of the active host
 flare logout
+
+# Log out of every host
+flare logout --all
 ```
 
-Get your API token at [flareapp.io/settings/api-tokens](https://flareapp.io/settings/api-tokens).
+`flare login` opens your browser to flareapp.io to confirm the requested scopes. The CLI listens on a random loopback port for the callback, exchanges the authorization code for tokens, and refreshes them transparently on subsequent calls. Personal access tokens are still supported via `--token` for scripts and CI; generate one at [flareapp.io/settings/api-tokens](https://flareapp.io/settings/api-tokens).
+
+Set `FLARE_BASE_URL` to point the CLI at a non-production environment (for example `FLARE_BASE_URL=https://passport-oauth.test/api`). Set `FLARE_OAUTH_CLIENT_ID` to override the baked-in Flare CLI OAuth client UUID.
 
 ### Commands
 

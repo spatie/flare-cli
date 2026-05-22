@@ -2,6 +2,21 @@
 
 use App\Services\CredentialStore;
 use App\Services\FlareUrlResolver;
+use App\Services\OAuth\OAuthException;
+use App\Services\OAuth\TokenRecord;
+use App\Services\OAuth\TokenRefresher;
+
+function makeRecord(array $overrides = []): TokenRecord
+{
+    return TokenRecord::fromArray(array_merge([
+        'access_token' => 'access-abc',
+        'refresh_token' => 'refresh-xyz',
+        'expires_at' => 1_700_000_000,
+        'scopes' => ['read', 'write'],
+        'client_id' => 'client-uuid',
+        'obtained_at' => 1_699_999_000,
+    ], $overrides));
+}
 
 beforeEach(function () {
     $this->tempDir = sys_get_temp_dir().'/flare-cli-test-'.uniqid();
@@ -28,12 +43,15 @@ afterEach(function () {
     }
 
     // Clean up temp directory
-    $configFile = $this->tempDir.'/.flare/config.json';
-    if (file_exists($configFile)) {
-        unlink($configFile);
+    $configDir = $this->tempDir.'/.flare';
+    foreach (['config.json', 'config.json.lock'] as $name) {
+        $path = "{$configDir}/{$name}";
+        if (file_exists($path)) {
+            unlink($path);
+        }
     }
-    if (is_dir($this->tempDir.'/.flare')) {
-        rmdir($this->tempDir.'/.flare');
+    if (is_dir($configDir)) {
+        rmdir($configDir);
     }
     if (is_dir($this->tempDir)) {
         rmdir($this->tempDir);
@@ -140,4 +158,169 @@ it('does not apply the legacy production token to other hosts', function () {
 
     expect($stagingStore->getToken())->toBeNull();
     expect($stagingStore->getConfiguredHosts())->toBe(['flareapp.io']);
+});
+
+it('stores and retrieves an OAuth record', function () {
+    $record = makeRecord();
+
+    $this->store->setRecord($record);
+
+    expect($this->store->getRecord())->toEqual($record);
+    expect($this->store->getToken())->toBe('access-abc');
+});
+
+it('returns the access token via getToken for OAuth records', function () {
+    $this->store->setRecord(makeRecord(['access_token' => 'fresh-access']));
+
+    expect($this->store->getToken())->toBe('fresh-access');
+    expect($this->store->getRecord()?->accessToken)->toBe('fresh-access');
+});
+
+it('returns null from getRecord when only a legacy string is stored', function () {
+    $this->store->setToken('plain-pat-token');
+
+    expect($this->store->getRecord())->toBeNull();
+    expect($this->store->getToken())->toBe('plain-pat-token');
+});
+
+it('allows a string token and an OAuth record to coexist for different hosts', function () {
+    $this->store->setToken('production-pat');
+
+    putenv('FLARE_BASE_URL=https://passport-oauth.test/api');
+    $_SERVER['FLARE_BASE_URL'] = 'https://passport-oauth.test/api';
+
+    $oauthStore = new CredentialStore(new FlareUrlResolver);
+    $oauthStore->setRecord(makeRecord());
+
+    expect($oauthStore->getRecord()?->accessToken)->toBe('access-abc');
+    expect($oauthStore->getToken())->toBe('access-abc');
+
+    putenv('FLARE_BASE_URL');
+    unset($_SERVER['FLARE_BASE_URL']);
+
+    $productionStore = new CredentialStore(new FlareUrlResolver);
+    expect($productionStore->getToken())->toBe('production-pat');
+    expect($productionStore->getRecord())->toBeNull();
+    expect($productionStore->getConfiguredHosts())->toBe(['flareapp.io', 'passport-oauth.test']);
+});
+
+it('replaces an OAuth record when setToken is called for the same host', function () {
+    $this->store->setRecord(makeRecord());
+    $this->store->setToken('replacing-pat');
+
+    expect($this->store->getRecord())->toBeNull();
+    expect($this->store->getToken())->toBe('replacing-pat');
+});
+
+it('replaces a string token when setRecord is called for the same host', function () {
+    $this->store->setToken('old-pat');
+    $this->store->setRecord(makeRecord());
+
+    expect($this->store->getToken())->toBe('access-abc');
+    expect($this->store->getRecord())->not->toBeNull();
+});
+
+it('flushes an OAuth record', function () {
+    $this->store->setRecord(makeRecord());
+    $this->store->flush();
+
+    expect($this->store->getRecord())->toBeNull();
+    expect($this->store->getToken())->toBeNull();
+});
+
+it('ignores entries that are neither strings nor OAuth records', function () {
+    mkdir($this->tempDir.'/.flare', 0755, true);
+
+    file_put_contents(
+        $this->tempDir.'/.flare/config.json',
+        json_encode([
+            'tokens' => [
+                'flareapp.io' => 'valid-pat',
+                'bogus.test' => 42,
+                'half-baked.test' => ['type' => 'something-else'],
+            ],
+        ], JSON_PRETTY_PRINT),
+    );
+
+    expect($this->store->getConfiguredHosts())->toBe(['flareapp.io']);
+});
+
+it('returns the stored string verbatim via getAccessToken for legacy tokens', function () {
+    $this->store->setToken('legacy-pat');
+
+    expect($this->store->getAccessToken())->toBe('legacy-pat');
+});
+
+it('refreshes and writes back when getAccessToken finds a near-expiry OAuth record', function () {
+    $stale = makeRecord(['expires_at' => time() + 10, 'access_token' => 'stale']);
+    $fresh = makeRecord(['expires_at' => time() + 99999, 'access_token' => 'fresh', 'refresh_token' => 'rotated']);
+
+    $this->store->setRecord($stale);
+
+    $refresher = Mockery::mock(TokenRefresher::class);
+    $refresher->shouldReceive('refreshIfNeeded')
+        ->once()
+        ->andReturn($fresh);
+
+    app()->instance(TokenRefresher::class, $refresher);
+
+    expect($this->store->getAccessToken())->toBe('fresh');
+    expect($this->store->getRecord()?->accessToken)->toBe('fresh');
+    expect($this->store->getRecord()?->refreshToken)->toBe('rotated');
+});
+
+it('does not write back when refreshIfNeeded returns the same record', function () {
+    $record = makeRecord(['expires_at' => time() + 99999]);
+    $this->store->setRecord($record);
+
+    $configPath = $this->tempDir.'/.flare/config.json';
+    $originalMtime = filemtime($configPath);
+
+    $refresher = Mockery::mock(TokenRefresher::class);
+    $refresher->shouldReceive('refreshIfNeeded')
+        ->once()
+        ->andReturnUsing(fn ($current) => $current);
+
+    app()->instance(TokenRefresher::class, $refresher);
+
+    clearstatcache();
+    sleep(1); // ensure mtime would change if a write occurred
+    $this->store->getAccessToken();
+
+    clearstatcache();
+    expect(filemtime($configPath))->toBe($originalMtime);
+});
+
+it('returns true and persists rotated tokens on forceRefresh success', function () {
+    $stale = makeRecord(['access_token' => 'stale']);
+    $fresh = makeRecord(['access_token' => 'fresh', 'refresh_token' => 'rotated']);
+
+    $this->store->setRecord($stale);
+
+    $refresher = Mockery::mock(TokenRefresher::class);
+    $refresher->shouldReceive('refresh')->once()->andReturn($fresh);
+
+    app()->instance(TokenRefresher::class, $refresher);
+
+    expect($this->store->forceRefresh())->toBeTrue();
+    expect($this->store->getRecord()?->accessToken)->toBe('fresh');
+});
+
+it('returns false from forceRefresh when no OAuth record is stored', function () {
+    $this->store->setToken('legacy-pat');
+
+    expect($this->store->forceRefresh())->toBeFalse();
+});
+
+it('returns false from forceRefresh when the refresh call fails', function () {
+    $this->store->setRecord(makeRecord());
+
+    $refresher = Mockery::mock(TokenRefresher::class);
+    $refresher->shouldReceive('refresh')
+        ->once()
+        ->andThrow(new OAuthException('refresh failed', 'invalid_grant'));
+
+    app()->instance(TokenRefresher::class, $refresher);
+
+    expect($this->store->forceRefresh())->toBeFalse();
 });

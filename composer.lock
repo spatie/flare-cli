@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "6bf26acd9cd7ab0968a56dfc7793525e",
+    "content-hash": "12c1e584603ed529a3871a4083af3811",
     "packages": [],
     "packages-dev": [
         {
@@ -6956,16 +6956,16 @@
         },
         {
             "name": "spatie/laravel-openapi-cli",
-            "version": "1.2.0",
+            "version": "1.3.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/laravel-openapi-cli.git",
-                "reference": "0c4e1cb0d091f8c66be3596522d363f5fbe91626"
+                "reference": "1217cbb74bd3cac2b288831c3823f49457e70233"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/laravel-openapi-cli/zipball/0c4e1cb0d091f8c66be3596522d363f5fbe91626",
-                "reference": "0c4e1cb0d091f8c66be3596522d363f5fbe91626",
+                "url": "https://api.github.com/repos/spatie/laravel-openapi-cli/zipball/1217cbb74bd3cac2b288831c3823f49457e70233",
+                "reference": "1217cbb74bd3cac2b288831c3823f49457e70233",
                 "shasum": ""
             },
             "require": {
@@ -7024,7 +7024,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/laravel-openapi-cli/issues",
-                "source": "https://github.com/spatie/laravel-openapi-cli/tree/1.2.0"
+                "source": "https://github.com/spatie/laravel-openapi-cli/tree/1.3.0"
             },
             "funding": [
                 {
@@ -7032,7 +7032,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-04-28T06:44:50+00:00"
+            "time": "2026-05-22T12:26:40+00:00"
         },
         {
             "name": "spatie/laravel-package-tools",
