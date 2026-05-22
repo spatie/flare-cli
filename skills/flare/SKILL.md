@@ -10,7 +10,7 @@ description: >-
 license: MIT
 metadata:
   author: spatie
-  version: "0.0.1"
+  version: "0.1.0"
 ---
 
 # Flare CLI
@@ -39,17 +39,32 @@ composer global config bin-dir --absolute
 
 ## Authentication
 
+`flare login` is interactive. **Recommend the user run it themselves** — don't try to drive it from inside an agent session.
+
 ```bash
-# Log in — you'll be prompted for your API token
+# Default: browser-based OAuth (PKCE). Opens a browser to flareapp.io,
+# user approves the requested scopes + team/project access, tokens are
+# stored locally and refreshed transparently before each API call.
 flare login
 
+# Headless / SSH terminal: device-code flow. Prints a short user code +
+# verification URL; the user enters the code on any other device.
+flare login --device
+
+# Escape hatch: paste a personal access token (or legacy API token)
+# instead of going through the browser flow.
+flare login --token
+
 # Log out
-flare logout
+flare logout         # only the active host
+flare logout --all   # every configured host
 ```
 
-Get your API token at https://flareapp.io/settings/api-tokens.
+Tokens are stored per-host in `~/.flare/config.json`. The active host comes from `FLARE_BASE_URL` (defaults to `https://flareapp.io/api`).
 
-If any command returns a 401 error, the token is invalid or expired. Run `flare login` again.
+Personal access tokens can still be generated at https://flareapp.io/settings/api-tokens — use them with `flare login --token` for scripts, CI, or any non-interactive context.
+
+If any command returns a 401 error, the credentials are invalid or expired. Suggest the user run `flare login` again.
 
 ## Quick command reference
 
