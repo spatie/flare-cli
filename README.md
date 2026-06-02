@@ -1,8 +1,8 @@
 # Flare CLI
 
 [![Latest Version on Packagist](https://img.shields.io/packagist/v/spatie/flare-cli.svg?style=flat-square)](https://packagist.org/packages/spatie/flare-cli)
-[![GitHub Tests Action Status](https://img.shields.io/github/actions/workflow/status/spatie/flare-cli/run-tests.yml?branch=main&label=tests&style=flat-square)](https://github.com/spatie/flare-cli/actions?query=workflow%3Arun-tests+branch%3Amain)
-[![GitHub Code Style Action Status](https://img.shields.io/github/actions/workflow/status/spatie/flare-cli/fix-php-code-style-issues.yml?branch=main&label=code%20style&style=flat-square)](https://github.com/spatie/flare-cli/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
+[![GitHub Tests Action Status](https://github.com/spatie/flare-cli/actions/workflows/run-tests.yml/badge.svg)](https://github.com/spatie/flare-cli/actions?query=workflow%3Arun-tests+branch%3Amain)
+[![GitHub Code Style Action Status](https://github.com/spatie/flare-cli/actions/workflows/fix-php-code-style-issues.yml/badge.svg)](https://github.com/spatie/flare-cli/actions?query=workflow%3A"Fix+PHP+code+style+issues"+branch%3Amain)
 [![Total Downloads](https://img.shields.io/packagist/dt/spatie/flare-cli.svg?style=flat-square)](https://packagist.org/packages/spatie/flare-cli)
 
 A command-line tool for [Flare](https://flareapp.io) — interact with the Flare API from your terminal.
