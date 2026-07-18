@@ -89,14 +89,18 @@ class LoginCommand extends Command
         }
 
         try {
-            $response = Http::withToken($token)->get("{$urlResolver->getApiBaseUrl()}/me");
+            // Without acceptJson, an invalid token gets redirected to the HTML
+            // login page and reads as a successful response.
+            $response = Http::withToken($token)->acceptJson()->get("{$urlResolver->getApiBaseUrl()}/me");
         } catch (ConnectionException) {
             $this->error('Could not connect to Flare. Please check your internet connection.');
 
             return self::FAILURE;
         }
 
-        if (! $response->successful()) {
+        $email = $response->json('email');
+
+        if (! $response->successful() || ! is_string($email) || $email === '') {
             $this->error('Invalid API token.');
 
             return self::FAILURE;
@@ -104,7 +108,7 @@ class LoginCommand extends Command
 
         $credentials->setToken($token);
 
-        return $this->reportSuccess($response->json('email', 'unknown'), $urlResolver);
+        return $this->reportSuccess($email, $urlResolver);
     }
 
     private function loginWithBrowser(
@@ -137,7 +141,7 @@ class LoginCommand extends Command
     private function fetchEmail(TokenRecord $record, FlareUrlResolver $urlResolver): ?string
     {
         try {
-            $response = Http::withToken($record->accessToken)->get("{$urlResolver->getApiBaseUrl()}/me");
+            $response = Http::withToken($record->accessToken)->acceptJson()->get("{$urlResolver->getApiBaseUrl()}/me");
         } catch (ConnectionException) {
             return null;
         }
