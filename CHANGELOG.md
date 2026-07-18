@@ -2,6 +2,18 @@
 
 All notable changes to `flare-cli` will be documented in this file.
 
+## 1.2.0 - 2026-07-18
+
+### What's new
+
+- `flare login` now uses OAuth: browser-based PKCE flow by default, `--device` for headless terminals, `--token` to paste a personal access token (#28)
+- Tokens are refreshed automatically and can be scoped to specific teams and projects during the consent flow
+- Friendly error message with a re-login hint when a command fails due to missing scopes or team/project grants
+- `flare login --token` now properly rejects invalid tokens instead of reporting a successful login (#40)
+- `flare logout --all` logs out of every configured host
+
+**Full Changelog**: https://github.com/spatie/flare-cli/compare/1.1.0...1.2.0
+
 ## 1.1.0 - 2026-04-07
 
 ### What's Changed
