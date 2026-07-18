@@ -47,6 +47,23 @@ class AppServiceProvider extends ServiceProvider
                     return true;
                 }
 
+                if ($response->status() === 403) {
+                    $message = $response->json('message');
+
+                    // Token-grant denials from Flare's ApiAccessAuthorizer all start
+                    // with "Token " ("Token is missing the 'write' scope.", "Token
+                    // does not grant access to this team.", ...). Other 403s are
+                    // genuine permission errors that a re-login won't fix.
+                    if (is_string($message) && str_starts_with($message, 'Token ')) {
+                        $command->error($message);
+                        $command->line(
+                            'Run `flare login` to re-authenticate and adjust the scopes, teams, and projects granted to the CLI.',
+                        );
+
+                        return true;
+                    }
+                }
+
                 return false;
             });
     }

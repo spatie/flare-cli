@@ -7,10 +7,11 @@ return [
     |--------------------------------------------------------------------------
     |
     | Flare's first-party CLI client is a public Passport client (no secret).
-    | The client_id below is the development seed value. Replace with the
-    | production UUID before tagging a release.
+    | The client_id below is the canonical "Flare CLI" client, seeded in
+    | production by flareapp.io's seed_first_party_oauth_clients migration.
     |
-    | Override per-environment with the FLARE_OAUTH_CLIENT_ID env var.
+    | Override with the FLARE_OAUTH_CLIENT_ID env var when developing
+    | against a local Flare server with different client ids.
     */
 
     'oauth' => [
