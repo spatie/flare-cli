@@ -1749,16 +1749,16 @@
         },
         {
             "name": "illuminate/contracts",
-            "version": "v12.61.0",
+            "version": "v12.64.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/contracts.git",
-                "reference": "099fd9b56ccaf776facaa27699b960a3f2451127"
+                "reference": "c16fd7ba7d8e6b8f336639ceb6b7e1ff6ed0efb5"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/illuminate/contracts/zipball/099fd9b56ccaf776facaa27699b960a3f2451127",
-                "reference": "099fd9b56ccaf776facaa27699b960a3f2451127",
+                "url": "https://api.github.com/repos/illuminate/contracts/zipball/c16fd7ba7d8e6b8f336639ceb6b7e1ff6ed0efb5",
+                "reference": "c16fd7ba7d8e6b8f336639ceb6b7e1ff6ed0efb5",
                 "shasum": ""
             },
             "require": {
@@ -1793,7 +1793,7 @@
                 "issues": "https://github.com/laravel/framework/issues",
                 "source": "https://github.com/laravel/framework"
             },
-            "time": "2026-02-20T14:37:40+00:00"
+            "time": "2026-06-09T13:20:54+00:00"
         },
         {
             "name": "illuminate/database",
@@ -6987,16 +6987,16 @@
         },
         {
             "name": "spatie/laravel-openapi-cli",
-            "version": "1.3.0",
+            "version": "1.3.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/laravel-openapi-cli.git",
-                "reference": "1217cbb74bd3cac2b288831c3823f49457e70233"
+                "reference": "05dd6e773364f2564ec8de77bb5096ab189d308b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/laravel-openapi-cli/zipball/1217cbb74bd3cac2b288831c3823f49457e70233",
-                "reference": "1217cbb74bd3cac2b288831c3823f49457e70233",
+                "url": "https://api.github.com/repos/spatie/laravel-openapi-cli/zipball/05dd6e773364f2564ec8de77bb5096ab189d308b",
+                "reference": "05dd6e773364f2564ec8de77bb5096ab189d308b",
                 "shasum": ""
             },
             "require": {
@@ -7055,7 +7055,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/laravel-openapi-cli/issues",
-                "source": "https://github.com/spatie/laravel-openapi-cli/tree/1.3.0"
+                "source": "https://github.com/spatie/laravel-openapi-cli/tree/1.3.1"
             },
             "funding": [
                 {
@@ -7063,7 +7063,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-05-22T12:26:40+00:00"
+            "time": "2026-06-26T09:41:27+00:00"
         },
         {
             "name": "spatie/laravel-package-tools",
@@ -9281,16 +9281,16 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v7.4.13",
+            "version": "v7.4.14",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "a7ec3b1156faf8815db7683ec7c1e7338e6f977c"
+                "reference": "f8f328665ace2370d1e10645b807ba1646dc7dcc"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/a7ec3b1156faf8815db7683ec7c1e7338e6f977c",
-                "reference": "a7ec3b1156faf8815db7683ec7c1e7338e6f977c",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/f8f328665ace2370d1e10645b807ba1646dc7dcc",
+                "reference": "f8f328665ace2370d1e10645b807ba1646dc7dcc",
                 "shasum": ""
             },
             "require": {
@@ -9333,7 +9333,7 @@
             "description": "Loads and dumps YAML files",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/yaml/tree/v7.4.13"
+                "source": "https://github.com/symfony/yaml/tree/v7.4.14"
             },
             "funding": [
                 {
@@ -9353,7 +9353,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-05-25T06:06:12+00:00"
+            "time": "2026-06-08T20:24:16+00:00"
         },
         {
             "name": "ta-tikoma/phpunit-architecture-test",
@@ -9416,16 +9416,16 @@
         },
         {
             "name": "tempest/highlight",
-            "version": "2.25.0",
+            "version": "2.27.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/tempestphp/highlight.git",
-                "reference": "ec0bb3353912244bd04acb7155694d3ea352f53f"
+                "reference": "7eaf2f4030cc218320672902608b6226bb13a39a"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tempestphp/highlight/zipball/ec0bb3353912244bd04acb7155694d3ea352f53f",
-                "reference": "ec0bb3353912244bd04acb7155694d3ea352f53f",
+                "url": "https://api.github.com/repos/tempestphp/highlight/zipball/7eaf2f4030cc218320672902608b6226bb13a39a",
+                "reference": "7eaf2f4030cc218320672902608b6226bb13a39a",
                 "shasum": ""
             },
             "require": {
@@ -9463,7 +9463,7 @@
             "description": "Fast, extensible, server-side code highlighting",
             "support": {
                 "issues": "https://github.com/tempestphp/highlight/issues",
-                "source": "https://github.com/tempestphp/highlight/tree/2.25.0"
+                "source": "https://github.com/tempestphp/highlight/tree/2.27.0"
             },
             "funding": [
                 {
@@ -9471,7 +9471,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-05-19T07:56:07+00:00"
+            "time": "2026-06-29T09:11:42+00:00"
         },
         {
             "name": "theseer/tokenizer",
