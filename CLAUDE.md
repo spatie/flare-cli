@@ -11,20 +11,19 @@ A standalone CLI tool for [Flare](https://flareapp.io) built on Laravel Zero. Us
 ## Architecture
 
 - **Laravel Zero 12** — PHP CLI micro-framework
-- **spatie/laravel-openapi-cli** — reads `resources/openapi/flare-api.yaml` and registers one command per API endpoint using `operationId`-based naming with `flare:` prefix
+- **spatie/laravel-openapi-cli** — fetches the spec from `https://flareapp.io/downloads/flare-api.yaml` (cached for 24h) and registers one command per API endpoint using `operationId`-based naming with `flare:` prefix
 - **CredentialStore** (`app/Services/CredentialStore.php`) — reads/writes API token to `~/.flare/config.json`
 - **LoginCommand / LogoutCommand** — custom commands (not from OpenAPI spec) for auth flow
 
 ## Key files
 
 - `flare` — CLI entry point (the binary)
-- `app/Providers/AppServiceProvider.php` — registers CredentialStore singleton and OpenApiCli
+- `app/Providers/AppServiceProvider.php` — registers CredentialStore singleton and OpenApiCli (spec URL, auth, error messaging)
 - `app/Services/CredentialStore.php` — credential persistence to `~/.flare/config.json`
 - `app/Commands/LoginCommand.php` — `flare login`
 - `app/Commands/LogoutCommand.php` — `flare logout`
-- `resources/openapi/flare-api.yaml` — bundled Flare API spec
 - `config/app.php` — providers list (must manually register `OpenApiCliServiceProvider`)
-- `box.json` — PHAR build config (must include `resources` directory)
+- `box.json` — PHAR build config
 
 ## Development setup
 
@@ -38,8 +37,6 @@ When updating the AI agent skill (e.g. filters, sorts, available commands), alwa
 
 - Laravel Zero disables package auto-discovery. Any package service providers must be registered manually in `config/app.php`.
 - The `.auth()` callable (not `.bearer()`) is used for dynamic credential resolution from `CredentialStore`.
-- The `resources/` directory must be in `box.json` `directories` for the spec to be bundled in the PHAR.
-- `resource_path()` resolves to `phar://` paths when running inside a PHAR — this works for reading but not writing.
 
 ## Coding standards
 

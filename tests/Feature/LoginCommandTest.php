@@ -2,6 +2,11 @@
 
 use App\Services\CredentialStore;
 use App\Services\FlareUrlResolver;
+use App\Services\OAuth\DeviceAuthorization;
+use App\Services\OAuth\DeviceLoginFlow;
+use App\Services\OAuth\OAuthException;
+use App\Services\OAuth\PkceLoginFlow;
+use App\Services\OAuth\TokenRecord;
 use Illuminate\Http\Client\ConnectionException;
 use Illuminate\Support\Facades\Http;
 
@@ -27,19 +32,34 @@ afterEach(function () {
         $_SERVER['FLARE_BASE_URL'] = $this->originalBaseUrl;
     }
 
-    $configFile = $this->tempDir.'/.flare/config.json';
-    if (file_exists($configFile)) {
-        unlink($configFile);
+    $configDir = $this->tempDir.'/.flare';
+    foreach (['config.json', 'config.json.lock'] as $name) {
+        $path = "{$configDir}/{$name}";
+        if (file_exists($path)) {
+            unlink($path);
+        }
     }
-    if (is_dir($this->tempDir.'/.flare')) {
-        rmdir($this->tempDir.'/.flare');
+    if (is_dir($configDir)) {
+        rmdir($configDir);
     }
     if (is_dir($this->tempDir)) {
         rmdir($this->tempDir);
     }
 });
 
-it('stores credentials on successful login', function () {
+function loginRecord(array $overrides = []): TokenRecord
+{
+    return TokenRecord::fromArray(array_merge([
+        'access_token' => 'pkce-access',
+        'refresh_token' => 'pkce-refresh',
+        'expires_at' => time() + 1296000,
+        'scopes' => ['read', 'write'],
+        'client_id' => 'client-uuid',
+        'obtained_at' => time(),
+    ], $overrides));
+}
+
+it('stores credentials on successful login with --token', function () {
     Http::fake([
         'flareapp.io/api/me' => Http::response([
             'id' => 20,
@@ -49,7 +69,7 @@ it('stores credentials on successful login', function () {
         ]),
     ]);
 
-    $this->artisan('login')
+    $this->artisan('login --token')
         ->expectsQuestion('Enter your Flare API token', 'valid-token-123')
         ->expectsOutputToContain('Successfully logged in as alex@spatie.be')
         ->assertExitCode(0);
@@ -57,12 +77,12 @@ it('stores credentials on successful login', function () {
     expect($this->store->getToken())->toBe('valid-token-123');
 });
 
-it('shows error and does not store token on invalid token', function () {
+it('shows error and does not store token on invalid --token input', function () {
     Http::fake([
         'flareapp.io/api/me' => Http::response(['error' => 'Unauthorized'], 401),
     ]);
 
-    $this->artisan('login')
+    $this->artisan('login --token')
         ->expectsQuestion('Enter your Flare API token', 'invalid-token')
         ->expectsOutput('Invalid API token.')
         ->assertExitCode(1);
@@ -70,7 +90,7 @@ it('shows error and does not store token on invalid token', function () {
     expect($this->store->getToken())->toBeNull();
 });
 
-it('validates the token against the active base URL', function () {
+it('validates the --token against the active base URL', function () {
     putenv('FLARE_BASE_URL=https://ingress-staging.flareapp.io/api/');
     $_SERVER['FLARE_BASE_URL'] = 'https://ingress-staging.flareapp.io/api/';
 
@@ -80,7 +100,7 @@ it('validates the token against the active base URL', function () {
         ]),
     ]);
 
-    $this->artisan('login')
+    $this->artisan('login --token')
         ->expectsQuestion('Enter your Flare API token', 'staging-token-123')
         ->expectsOutputToContain('https://staging.flareapp.io/api')
         ->expectsOutputToContain('https://staging.flareapp.io/account/api-tokens')
@@ -90,17 +110,144 @@ it('validates the token against the active base URL', function () {
     expect($this->store->getToken())->toBe('staging-token-123');
 });
 
-it('shows connection error on network failure', function () {
+it('shows connection error on --token network failure', function () {
     Http::fake([
         'flareapp.io/api/me' => function () {
             throw new ConnectionException('Connection refused');
         },
     ]);
 
-    $this->artisan('login')
+    $this->artisan('login --token')
         ->expectsQuestion('Enter your Flare API token', 'some-token')
         ->expectsOutput('Could not connect to Flare. Please check your internet connection.')
         ->assertExitCode(1);
 
     expect($this->store->getToken())->toBeNull();
+});
+
+it('warns when --token replaces an existing OAuth record', function () {
+    $this->store->setRecord(loginRecord());
+
+    Http::fake([
+        'flareapp.io/api/me' => Http::response(['email' => 'alex@spatie.be']),
+    ]);
+
+    $this->artisan('login --token')
+        ->expectsQuestion('Enter your Flare API token', 'replacement-pat')
+        ->expectsOutputToContain('A browser-based OAuth session already exists')
+        ->expectsOutputToContain('Successfully logged in as alex@spatie.be')
+        ->assertExitCode(0);
+
+    expect($this->store->getToken())->toBe('replacement-pat');
+    expect($this->store->getRecord())->toBeNull();
+});
+
+it('completes the PKCE browser flow and stores the OAuth record', function () {
+    $record = loginRecord(['access_token' => 'browser-access']);
+
+    Http::fake([
+        'flareapp.io/api/me' => Http::response(['email' => 'alex@spatie.be']),
+    ]);
+
+    $flow = Mockery::mock(PkceLoginFlow::class);
+    $flow->shouldReceive('run')->once()->andReturn($record);
+    $this->app->instance(PkceLoginFlow::class, $flow);
+
+    $this->artisan('login')
+        ->expectsOutputToContain('Opening your browser')
+        ->expectsOutputToContain('Successfully logged in as alex@spatie.be')
+        ->assertExitCode(0);
+
+    expect($this->store->getRecord()?->accessToken)->toBe('browser-access');
+});
+
+it('reports email as unknown if /me fails after a successful PKCE exchange', function () {
+    Http::fake([
+        'flareapp.io/api/me' => Http::response([], 500),
+    ]);
+
+    $flow = Mockery::mock(PkceLoginFlow::class);
+    $flow->shouldReceive('run')->once()->andReturn(loginRecord());
+    $this->app->instance(PkceLoginFlow::class, $flow);
+
+    $this->artisan('login')
+        ->expectsOutputToContain('Successfully logged in as unknown')
+        ->assertExitCode(0);
+
+    expect($this->store->getRecord())->not->toBeNull();
+});
+
+it('shows the OAuth error and does not store a record when PKCE fails', function () {
+    $flow = Mockery::mock(PkceLoginFlow::class);
+    $flow->shouldReceive('run')->once()->andThrow(new OAuthException('state did not match'));
+    $this->app->instance(PkceLoginFlow::class, $flow);
+
+    $this->artisan('login')
+        ->expectsOutputToContain('state did not match')
+        ->assertExitCode(1);
+
+    expect($this->store->getRecord())->toBeNull();
+});
+
+it('completes the device code flow and stores the OAuth record', function () {
+    Http::fake([
+        'flareapp.io/api/me' => Http::response(['email' => 'alex@spatie.be']),
+    ]);
+
+    $device = Mockery::mock(DeviceLoginFlow::class);
+    $device->shouldReceive('run')
+        ->once()
+        ->andReturnUsing(function ($announce) {
+            $announce(DeviceAuthorization::fromArray([
+                'device_code' => 'dev-code',
+                'user_code' => 'ABCD-EFGH',
+                'verification_uri' => 'https://flareapp.io/oauth/device',
+                'expires_in' => 600,
+                'interval' => 5,
+            ]));
+
+            return loginRecord(['access_token' => 'device-access']);
+        });
+    $this->app->instance(DeviceLoginFlow::class, $device);
+
+    $this->artisan('login --device')
+        ->expectsOutputToContain('ABCD-EFGH')
+        ->expectsOutputToContain('https://flareapp.io/oauth/device')
+        ->expectsOutputToContain('Successfully logged in as alex@spatie.be')
+        ->assertExitCode(0);
+
+    expect($this->store->getRecord()?->accessToken)->toBe('device-access');
+});
+
+it('reports the error and does not store a record when device flow fails', function () {
+    $device = Mockery::mock(DeviceLoginFlow::class);
+    $device->shouldReceive('run')->once()->andThrow(new OAuthException('access_denied'));
+    $this->app->instance(DeviceLoginFlow::class, $device);
+
+    $this->artisan('login --device')
+        ->expectsOutputToContain('access_denied')
+        ->assertExitCode(1);
+
+    expect($this->store->getRecord())->toBeNull();
+});
+
+it('falls back to device flow when the terminal is non-interactive', function () {
+    Http::fake([
+        'flareapp.io/api/me' => Http::response(['email' => 'alex@spatie.be']),
+    ]);
+
+    $device = Mockery::mock(DeviceLoginFlow::class);
+    $device->shouldReceive('run')->once()->andReturn(loginRecord(['access_token' => 'fallback-access']));
+    $this->app->instance(DeviceLoginFlow::class, $device);
+
+    $pkce = Mockery::mock(PkceLoginFlow::class);
+    $pkce->shouldNotReceive('run');
+    $this->app->instance(PkceLoginFlow::class, $pkce);
+
+    $this->artisan('login --no-interaction')
+        ->expectsOutputToContain('Non-interactive terminal detected')
+        ->expectsOutputToContain('Successfully logged in')
+        ->assertExitCode(0);
+
+    expect($this->store->getRecord()?->accessToken)->toBe('fallback-access');
 });

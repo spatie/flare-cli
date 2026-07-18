@@ -68,3 +68,31 @@ it('only clears the active host credentials', function () {
 
     expect((new CredentialStore(new FlareUrlResolver))->getToken())->toBe('production-token');
 });
+
+it('clears every stored host with --all', function () {
+    $this->store->setToken('production-token');
+
+    putenv('FLARE_BASE_URL=https://ingress-staging.flareapp.io/api');
+    $_SERVER['FLARE_BASE_URL'] = 'https://ingress-staging.flareapp.io/api';
+
+    $stagingStore = new CredentialStore(new FlareUrlResolver);
+    $stagingStore->setToken('staging-token');
+    $this->app->instance(CredentialStore::class, $stagingStore);
+
+    $this->artisan('logout --all')
+        ->expectsOutput('Removed credentials for: flareapp.io, staging.flareapp.io.')
+        ->assertExitCode(0);
+
+    expect($stagingStore->getToken())->toBeNull();
+
+    putenv('FLARE_BASE_URL');
+    unset($_SERVER['FLARE_BASE_URL']);
+
+    expect((new CredentialStore(new FlareUrlResolver))->getToken())->toBeNull();
+});
+
+it('reports nothing to remove on logout --all when no credentials are stored', function () {
+    $this->artisan('logout --all')
+        ->expectsOutput('No stored credentials to remove.')
+        ->assertExitCode(0);
+});
