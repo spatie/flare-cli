@@ -77,6 +77,38 @@ it('stores credentials on successful login with --token', function () {
     expect($this->store->getToken())->toBe('valid-token-123');
 });
 
+it('rejects a --token when /me responds with a non-JSON page', function () {
+    // An invalid token used to get redirected to the HTML login page, which the
+    // HTTP client follows to a 200 — and login reported success as "unknown".
+    Http::fake([
+        'flareapp.io/api/me' => Http::response('<!DOCTYPE html><html><body>Log in</body></html>', 200, [
+            'Content-Type' => 'text/html',
+        ]),
+    ]);
+
+    $this->artisan('login --token')
+        ->expectsQuestion('Enter your Flare API token', 'invalid-token')
+        ->expectsOutput('Invalid API token.')
+        ->assertExitCode(1);
+
+    expect($this->store->getToken())->toBeNull();
+});
+
+it('sends an Accept json header when validating a --token', function () {
+    Http::fake([
+        'flareapp.io/api/me' => Http::response(['email' => 'alex@spatie.be']),
+    ]);
+
+    $this->artisan('login --token')
+        ->expectsQuestion('Enter your Flare API token', 'valid-token-123')
+        ->assertExitCode(0);
+
+    Http::assertSent(function ($request) {
+        return $request->url() === 'https://flareapp.io/api/me'
+            && $request->hasHeader('Accept', 'application/json');
+    });
+});
+
 it('shows error and does not store token on invalid --token input', function () {
     Http::fake([
         'flareapp.io/api/me' => Http::response(['error' => 'Unauthorized'], 401),
