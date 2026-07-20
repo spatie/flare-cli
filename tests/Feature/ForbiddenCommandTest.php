@@ -25,7 +25,7 @@ it('links to API access when the token is missing a scope or grant', function ()
 
     $this->artisan('list-projects')
         ->expectsOutputToContain("Token is missing the 'write' scope.")
-        ->expectsOutputToContain('https://flareapp.io/account/api-access')
+        ->expectsOutputToContain('https://flareapp.io/account/connected-apps')
         ->assertExitCode(1);
 });
 
@@ -35,7 +35,7 @@ it('does not suggest re-login for other permission errors', function () {
     ]);
 
     $this->artisan('list-projects')
-        ->doesntExpectOutputToContain('account/api-access')
+        ->doesntExpectOutputToContain('account/connected-apps')
         ->assertExitCode(1);
 });
 

@@ -123,7 +123,7 @@ it('validates the --token against the active base URL', function () {
     $this->artisan('login --token')
         ->expectsQuestion('Enter your Flare API token', 'staging-token-123')
         ->expectsOutputToContain('https://staging.flareapp.io/api')
-        ->expectsOutputToContain('https://staging.flareapp.io/account/api-access')
+        ->expectsOutputToContain('https://staging.flareapp.io/account/personal-access-tokens')
         ->expectsOutputToContain('Successfully logged in as alex+staging@spatie.be')
         ->assertExitCode(0);
 
