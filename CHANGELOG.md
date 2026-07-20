@@ -2,6 +2,19 @@
 
 All notable changes to `flare-cli` will be documented in this file.
 
+## 1.3.0 - 2026-07-20
+
+### What's new
+
+- `flare login` now discovers the server's OAuth endpoints via RFC 8414 metadata instead of assuming hardcoded paths
+- `flare logout` revokes the OAuth connection remotely before removing local credentials, and `--local-only` skips revocation when Flare is unreachable
+- `flare login --name` suggests an editable connection name on the consent screen
+- Credentials are stored as issuer and API-base profiles, so production, staging, and self-hosted logins can coexist
+- `~/.flare` is now created with `0700`/`0600` permissions and the config file is replaced atomically
+- A token refresh that fails because the connection was revoked aborts with a clear re-login hint instead of sending a doomed request
+
+**Full Changelog**: https://github.com/spatie/flare-cli/compare/1.2.0...1.3.0
+
 ## 1.2.0 - 2026-07-18
 
 ### What's new
