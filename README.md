@@ -61,7 +61,7 @@ flare auth
 
 Credentials are stored as issuer and API-base profiles in `~/.flare/config.json`. On macOS and Linux, the directory uses mode `0700` and the atomically replaced config file uses `0600`. Production, staging, and self-hosted credentials can coexist.
 
-Personal and legacy tokens remain supported through `--token` for scripts and CI. Create and manage personal tokens under [API Access](https://flareapp.io/account/api-access).
+Personal and legacy tokens remain supported through `--token` for scripts and CI. Create and manage personal tokens under [Personal access tokens](https://flareapp.io/account/personal-access-tokens).
 
 Set `FLARE_BASE_URL` to point the CLI at a non-production environment (for example `FLARE_BASE_URL=https://passport-oauth.test/api`). An origin without a path defaults to `/api`; non-default paths remain distinct profiles. Set `FLARE_OAUTH_CLIENT_ID` to override the baked-in Flare CLI OAuth client UUID.
 

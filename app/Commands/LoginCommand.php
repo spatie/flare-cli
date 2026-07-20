@@ -85,7 +85,7 @@ class LoginCommand extends Command
             $this->newLine();
         }
 
-        $tokenUrl = "{$urlResolver->getAppUrl()}/account/api-access";
+        $tokenUrl = "{$urlResolver->getAppUrl()}/account/personal-access-tokens";
         $this->line('Personal tokens are intended for automation and CI.');
         $this->line("You can generate one at <href={$tokenUrl}>{$tokenUrl}</>");
         $this->newLine();

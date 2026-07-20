@@ -78,7 +78,7 @@ class AppServiceProvider extends ServiceProvider
                     )
                 ) {
                     $command->error($message);
-                    $command->line("Manage this connection at {$urlResolver->getAppUrl()}/account/api-access");
+                    $command->line("Manage this connection at {$urlResolver->getAppUrl()}/account/connected-apps");
 
                     return true;
                 }
