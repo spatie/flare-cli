@@ -18,6 +18,9 @@ final class TokenRecord
         public readonly array $scopes,
         public readonly string $clientId,
         public readonly int $obtainedAt,
+        public readonly ?string $issuer = null,
+        public readonly ?string $apiBaseUrl = null,
+        public readonly bool $refreshPending = false,
     ) {}
 
     /**
@@ -44,6 +47,9 @@ final class TokenRecord
             scopes: array_values(array_filter($scopes, 'is_string')),
             clientId: (string) $data['client_id'],
             obtainedAt: (int) $data['obtained_at'],
+            issuer: isset($data['issuer']) && is_string($data['issuer']) ? $data['issuer'] : null,
+            apiBaseUrl: isset($data['api_base_url']) && is_string($data['api_base_url']) ? $data['api_base_url'] : null,
+            refreshPending: ($data['refresh_pending'] ?? false) === true,
         );
     }
 
@@ -52,7 +58,7 @@ final class TokenRecord
      */
     public function toArray(): array
     {
-        return [
+        $record = [
             'type' => self::TYPE,
             'access_token' => $this->accessToken,
             'refresh_token' => $this->refreshToken,
@@ -61,6 +67,20 @@ final class TokenRecord
             'client_id' => $this->clientId,
             'obtained_at' => $this->obtainedAt,
         ];
+
+        if ($this->issuer !== null) {
+            $record['issuer'] = $this->issuer;
+        }
+
+        if ($this->apiBaseUrl !== null) {
+            $record['api_base_url'] = $this->apiBaseUrl;
+        }
+
+        if ($this->refreshPending) {
+            $record['refresh_pending'] = true;
+        }
+
+        return $record;
     }
 
     public function isExpiringWithin(int $seconds, ?int $now = null): bool
@@ -74,14 +94,34 @@ final class TokenRecord
         int $expiresAt,
         int $obtainedAt,
     ): self {
-        return new self(
-            accessToken: $accessToken,
-            refreshToken: $refreshToken,
-            expiresAt: $expiresAt,
-            scopes: $this->scopes,
-            clientId: $this->clientId,
-            obtainedAt: $obtainedAt,
-        );
+        return $this->with([
+            'access_token' => $accessToken,
+            'refresh_token' => $refreshToken,
+            'expires_at' => $expiresAt,
+            'obtained_at' => $obtainedAt,
+            'refresh_pending' => false,
+        ]);
+    }
+
+    public function withProfile(string $issuer, string $apiBaseUrl): self
+    {
+        return $this->with([
+            'issuer' => $issuer,
+            'api_base_url' => $apiBaseUrl,
+        ]);
+    }
+
+    public function markRefreshPending(): self
+    {
+        return $this->with(['refresh_pending' => true]);
+    }
+
+    /**
+     * @param  array<string, mixed>  $overrides
+     */
+    private function with(array $overrides): self
+    {
+        return self::fromArray([...$this->toArray(), ...$overrides]);
     }
 
     public static function looksLikeRecord(mixed $data): bool

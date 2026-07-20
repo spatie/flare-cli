@@ -16,7 +16,7 @@ function refresherRecord(int $expiresAt, int $obtainedAt = 1_000_000): TokenReco
     ]);
 }
 
-it('returns the same record when expiry is outside the threshold', function () {
+it('does not need a refresh when expiry is outside the threshold', function () {
     $client = Mockery::mock(OAuthHttpClient::class);
     $client->shouldNotReceive('refresh');
 
@@ -25,27 +25,16 @@ it('returns the same record when expiry is outside the threshold', function () {
 
     $refresher = new TokenRefresher($client, thresholdSeconds: 60);
 
-    expect($refresher->refreshIfNeeded($record, $now))->toBe($record);
+    expect($refresher->shouldRefresh($record, $now))->toBeFalse();
 });
 
-it('refreshes when expiry is within the threshold', function () {
+it('needs a refresh when expiry is within the threshold', function () {
     $now = 1_000_000;
     $stale = refresherRecord(expiresAt: $now + 30);
-    $fresh = TokenRecord::fromArray([
-        'access_token' => 'new-access',
-        'refresh_token' => 'new-refresh',
-        'expires_at' => $now + 1296000,
-        'scopes' => ['read', 'write'],
-        'client_id' => 'client-uuid',
-        'obtained_at' => $now,
-    ]);
 
-    $client = Mockery::mock(OAuthHttpClient::class);
-    $client->shouldReceive('refresh')->once()->with($stale)->andReturn($fresh);
+    $refresher = new TokenRefresher(Mockery::mock(OAuthHttpClient::class), thresholdSeconds: 60);
 
-    $refresher = new TokenRefresher($client, thresholdSeconds: 60);
-
-    expect($refresher->refreshIfNeeded($stale, $now))->toBe($fresh);
+    expect($refresher->shouldRefresh($stale, $now))->toBeTrue();
 });
 
 it('refreshes unconditionally via refresh()', function () {

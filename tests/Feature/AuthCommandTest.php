@@ -2,6 +2,7 @@
 
 use App\Services\CredentialStore;
 use App\Services\FlareUrlResolver;
+use App\Services\OAuth\TokenRecord;
 use Illuminate\Support\Facades\Artisan;
 
 beforeEach(function () {
@@ -26,16 +27,7 @@ afterEach(function () {
         $_SERVER['FLARE_BASE_URL'] = $this->originalBaseUrl;
     }
 
-    $configFile = $this->tempDir.'/.flare/config.json';
-    if (file_exists($configFile)) {
-        unlink($configFile);
-    }
-    if (is_dir($this->tempDir.'/.flare')) {
-        rmdir($this->tempDir.'/.flare');
-    }
-    if (is_dir($this->tempDir)) {
-        rmdir($this->tempDir);
-    }
+    cleanupFlareHome($this->tempDir);
 });
 
 it('shows the active context and all stored auth contexts without leaking tokens', function () {
@@ -73,5 +65,27 @@ it('reports when the active auth context is missing', function () {
     expect($output)->toContain('missing');
     expect($output)->toContain('flareapp.io');
     expect($output)->toContain('staging.flareapp.io');
-    expect($output)->toContain('Run `flare login` to authenticate against staging.flareapp.io.');
+    expect($output)->toContain('Run `flare login` to authenticate against https://staging.flareapp.io/api.');
+});
+
+it('shows the active OAuth issuer and credential type', function () {
+    $this->store->setRecord(TokenRecord::fromArray([
+        'access_token' => 'secret-access',
+        'refresh_token' => 'secret-refresh',
+        'expires_at' => time() + 99999,
+        'scopes' => ['read'],
+        'client_id' => 'client-uuid',
+        'obtained_at' => time(),
+        'issuer' => 'https://flareapp.io',
+        'api_base_url' => 'https://flareapp.io/api',
+    ]));
+
+    Artisan::call('auth');
+
+    $output = Artisan::output();
+
+    expect($output)->toContain('Credential type: oauth');
+    expect($output)->toContain('OAuth issuer: https://flareapp.io');
+    expect($output)->not->toContain('secret-access');
+    expect($output)->not->toContain('secret-refresh');
 });

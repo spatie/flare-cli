@@ -47,24 +47,34 @@ composer global config bin-dir --absolute
 # stored locally and refreshed transparently before each API call.
 flare login
 
+# Optionally suggest an editable workstation connection name.
+flare login --name="Work laptop"
+
 # Headless / SSH terminal: device-code flow. Prints a short user code +
 # verification URL; the user enters the code on any other device.
 flare login --device
 
-# Escape hatch: paste a personal access token (or legacy API token)
-# instead of going through the browser flow.
+# Automation/CI fallback: paste a personal access token or legacy API
+# token instead of creating an interactive workstation connection.
 flare login --token
 
-# Log out
-flare logout         # only the active host
-flare logout --all   # every configured host
+# Remote logout revokes the OAuth connection before local cleanup.
+flare logout
+flare logout --all
+
+# Offline cleanup when Flare is unavailable. This may leave the remote
+# OAuth connection active.
+flare logout --local-only
+
+# Inspect the active OAuth issuer/API profile without exposing tokens.
+flare auth
 ```
 
-Tokens are stored per-host in `~/.flare/config.json`. The active host comes from `FLARE_BASE_URL` (defaults to `https://flareapp.io/api`).
+Credentials are stored by OAuth issuer and API base URL in `~/.flare/config.json`. The active API base comes from `FLARE_BASE_URL` and defaults to `https://flareapp.io/api`. Production, staging, and self-hosted profiles can coexist.
 
-Personal access tokens can still be generated at https://flareapp.io/settings/api-tokens — use them with `flare login --token` for scripts, CI, or any non-interactive context.
+Personal access tokens can be generated at https://flareapp.io/account/api-access. Use them with `flare login --token` for scripts and CI, not as the normal workstation login.
 
-If any command returns a 401 error, the credentials are invalid or expired. Suggest the user run `flare login` again.
+If the CLI reports an expired, revoked, or unrefreshable OAuth session, suggest `flare login`. If it reports missing connection permissions, direct the user to the API Access URL printed by the CLI.
 
 ## Quick command reference
 

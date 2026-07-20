@@ -5,13 +5,18 @@ namespace App\Services;
 use App\Services\OAuth\OAuthException;
 use App\Services\OAuth\TokenRecord;
 use App\Services\OAuth\TokenRefresher;
+use RuntimeException;
 
 class CredentialStore
 {
     private string $configPath;
 
+    private ?OAuthException $lastRefreshError = null;
+
+    private bool $permissionsVerified = false;
+
     public function __construct(
-        private readonly FlareUrlResolver $urlResolver = new FlareUrlResolver
+        private readonly FlareUrlResolver $urlResolver = new FlareUrlResolver,
     ) {
         $home = $_SERVER['HOME'] ?? $_SERVER['USERPROFILE'] ?? '';
 
@@ -20,7 +25,7 @@ class CredentialStore
 
     public function getToken(): ?string
     {
-        $entry = $this->readEntries()[$this->urlResolver->getHostKey()] ?? null;
+        $entry = $this->activeEntry();
 
         if (is_string($entry)) {
             return $entry;
@@ -35,12 +40,12 @@ class CredentialStore
 
     public function setToken(string $token): void
     {
-        $this->writeEntry($this->urlResolver->getHostKey(), $token);
+        $this->storeProfile(null, $this->urlResolver->getApiBaseUrl(), $token, replaceActive: true);
     }
 
     public function getRecord(): ?TokenRecord
     {
-        $entry = $this->readEntries()[$this->urlResolver->getHostKey()] ?? null;
+        $entry = $this->activeEntry();
 
         if (! TokenRecord::looksLikeRecord($entry)) {
             return null;
@@ -51,7 +56,9 @@ class CredentialStore
 
     public function getAccessToken(): ?string
     {
-        $entry = $this->readEntries()[$this->urlResolver->getHostKey()] ?? null;
+        $this->migrateActiveLegacyEntry();
+
+        $entry = $this->activeEntry();
 
         if (is_string($entry)) {
             return $entry;
@@ -61,43 +68,82 @@ class CredentialStore
             return null;
         }
 
-        $record = TokenRecord::fromArray($entry);
+        return $this->withConfigLock(function () {
+            $current = $this->getRecord();
 
-        return $this->withConfigLock(function () use ($record) {
-            $current = $this->getRecord() ?? $record;
-            $refreshed = app(TokenRefresher::class)->refreshIfNeeded($current);
-
-            if ($refreshed !== $current) {
-                $this->writeEntry($this->urlResolver->getHostKey(), $refreshed->toArray());
+            if ($current === null) {
+                return null;
             }
 
-            return $refreshed->accessToken;
+            $refresher = app(TokenRefresher::class);
+
+            if (! $refresher->shouldRefresh($current)) {
+                return $current->accessToken;
+            }
+
+            return $this->refreshLocked($current, $refresher)->accessToken;
         });
+    }
+
+    private function refreshLocked(TokenRecord $current, TokenRefresher $refresher): TokenRecord
+    {
+        if ($current->refreshPending) {
+            $this->lastRefreshError = new OAuthException(
+                'The previous refresh result is unknown. Log in again to avoid replaying a single-use refresh token.',
+                errorCode: 'refresh_replay_risk',
+            );
+
+            return $current;
+        }
+
+        $pending = $current->markRefreshPending();
+        $this->writeActiveEntry($pending->toArray());
+
+        try {
+            $refreshed = $refresher->refresh($pending);
+            $this->writeActiveEntry($refreshed->toArray());
+            $this->lastRefreshError = null;
+
+            return $refreshed;
+        } catch (OAuthException $exception) {
+            $this->lastRefreshError = $exception;
+
+            return $pending;
+        }
     }
 
     public function forceRefresh(): bool
     {
-        $record = $this->getRecord();
+        $this->migrateActiveLegacyEntry();
 
-        if ($record === null) {
+        if ($this->getRecord() === null || $this->lastRefreshError !== null) {
             return false;
         }
 
-        return $this->withConfigLock(function () use ($record) {
-            try {
-                $refreshed = app(TokenRefresher::class)->refresh($this->getRecord() ?? $record);
-                $this->writeEntry($this->urlResolver->getHostKey(), $refreshed->toArray());
+        return $this->withConfigLock(function () {
+            $current = $this->getRecord();
 
-                return true;
-            } catch (OAuthException) {
+            if ($current === null) {
                 return false;
             }
+
+            $refreshed = $this->refreshLocked($current, app(TokenRefresher::class));
+
+            return $refreshed !== $current && ! $refreshed->refreshPending;
         });
+    }
+
+    public function lastRefreshError(): ?OAuthException
+    {
+        return $this->lastRefreshError;
     }
 
     public function setRecord(TokenRecord $record): void
     {
-        $this->writeEntry($this->urlResolver->getHostKey(), $record->toArray());
+        $issuer = $record->issuer ?? rtrim($this->urlResolver->getAppUrl(), '/');
+        $apiBaseUrl = $record->apiBaseUrl ?? $this->urlResolver->getApiBaseUrl();
+
+        $this->storeProfile($issuer, $apiBaseUrl, $record->toArray());
     }
 
     public function flush(): void
@@ -106,12 +152,19 @@ class CredentialStore
             return;
         }
 
-        $this->ensureConfigDirectoryExists();
+        $this->withConfigLock(function () {
+            $data = $this->readConfig();
+            $apiBaseUrl = $this->urlResolver->getApiBaseUrl();
+            $profileKey = $data['active_profiles'][$apiBaseUrl] ?? null;
 
-        $entries = $this->readEntries();
-        unset($entries[$this->urlResolver->getHostKey()]);
+            if (is_string($profileKey)) {
+                unset($data['profiles'][$profileKey], $data['active_profiles'][$apiBaseUrl]);
+            }
 
-        $this->writeEntries($entries);
+            unset($data['tokens'][$this->urlResolver->getHostKey()]);
+
+            $this->writeConfig($data);
+        });
     }
 
     public function flushAll(): void
@@ -120,25 +173,267 @@ class CredentialStore
             return;
         }
 
-        $this->ensureConfigDirectoryExists();
-        $this->writeEntries([]);
+        $this->withConfigLock(function () {
+            $data = $this->readConfig();
+            unset($data['token'], $data['tokens']);
+            $data['profiles'] = (object) [];
+            $data['active_profiles'] = (object) [];
+
+            $this->writeConfig($data);
+        });
     }
 
     /**
-     * @return array<int, string>
+     * @return array<int, array{
+     *     key: string,
+     *     issuer: ?string,
+     *     api_base_url: string,
+     *     oauth: bool,
+     *     type: string,
+     *     active: bool
+     * }>
      */
-    public function getConfiguredHosts(): array
+    public function getConfiguredProfiles(): array
     {
-        return array_keys($this->readEntries());
+        $profiles = [];
+
+        foreach ($this->profileRows($this->readConfig()) as $row) {
+            $profiles[] = [
+                'key' => $row['key'],
+                'issuer' => $row['issuer'],
+                'api_base_url' => $row['api_base_url'],
+                'oauth' => $row['oauth'],
+                'type' => match (true) {
+                    $row['oauth'] && $row['legacy'] => 'oauth (legacy profile)',
+                    $row['oauth'] => 'oauth',
+                    default => 'personal token',
+                },
+                'active' => $row['active'],
+            ];
+        }
+
+        return $profiles;
+    }
+
+    /**
+     * @return array<int, array{
+     *     key: string,
+     *     issuer: ?string,
+     *     api_base_url: string,
+     *     record: TokenRecord,
+     *     active: bool
+     * }>
+     */
+    public function getOAuthProfiles(): array
+    {
+        $records = [];
+
+        foreach ($this->profileRows($this->readConfig()) as $row) {
+            if (! $row['oauth']) {
+                continue;
+            }
+
+            $records[] = [
+                'key' => $row['key'],
+                'issuer' => $row['issuer'],
+                'api_base_url' => $row['api_base_url'],
+                'record' => TokenRecord::fromArray($row['credential']),
+                'active' => $row['active'],
+            ];
+        }
+
+        return $records;
+    }
+
+    public function forgetProfile(string $key): void
+    {
+        if (! file_exists($this->configPath)) {
+            return;
+        }
+
+        $this->withConfigLock(function () use ($key) {
+            $data = $this->readConfig();
+
+            if (str_starts_with($key, 'legacy:')) {
+                unset($data['tokens'][substr($key, strlen('legacy:'))]);
+            } else {
+                unset($data['profiles'][$key]);
+
+                foreach (($data['active_profiles'] ?? []) as $apiBaseUrl => $activeKey) {
+                    if ($activeKey === $key) {
+                        unset($data['active_profiles'][$apiBaseUrl]);
+                    }
+                }
+            }
+
+            $this->writeConfig($data);
+        });
+    }
+
+    public function forgetNonOAuthProfiles(): void
+    {
+        foreach ($this->getConfiguredProfiles() as $profile) {
+            if ($profile['oauth']) {
+                continue;
+            }
+
+            $this->forgetProfile($profile['key']);
+        }
+    }
+
+    /**
+     * @param  string|array<string, mixed>  $credential
+     */
+    private function storeProfile(
+        ?string $issuer,
+        string $apiBaseUrl,
+        string|array $credential,
+        bool $replaceActive = false,
+    ): void {
+        $this->withConfigLock(function () use ($issuer, $apiBaseUrl, $credential, $replaceActive) {
+            $data = $this->readConfig();
+            $key = self::profileKey($issuer, $apiBaseUrl);
+            $oldKey = $data['active_profiles'][$apiBaseUrl] ?? null;
+
+            if ($replaceActive && is_string($oldKey) && $oldKey !== $key) {
+                unset($data['profiles'][$oldKey]);
+            }
+
+            $data['profiles'][$key] = [
+                'issuer' => $issuer,
+                'api_base_url' => $apiBaseUrl,
+                'credential' => $credential,
+            ];
+            $data['active_profiles'][$apiBaseUrl] = $key;
+
+            unset($data['tokens'][$this->urlResolver->getHostKey()]);
+
+            $this->writeConfig($data);
+        });
+    }
+
+    private function migrateActiveLegacyEntry(): void
+    {
+        $data = $this->readConfig();
+        $apiBaseUrl = $this->urlResolver->getApiBaseUrl();
+
+        if (isset($data['active_profiles'][$apiBaseUrl])) {
+            return;
+        }
+
+        $host = $this->urlResolver->getHostKey();
+        $legacyEntry = $this->legacyEntries($data)[$host] ?? null;
+
+        if ($legacyEntry === null) {
+            return;
+        }
+
+        $issuer = null;
+
+        if (TokenRecord::looksLikeRecord($legacyEntry)) {
+            $issuer = rtrim($this->urlResolver->getAppUrl(), '/');
+
+            $legacyEntry = TokenRecord::fromArray($legacyEntry)
+                ->withProfile($issuer, $apiBaseUrl)
+                ->toArray();
+        }
+
+        $this->storeProfile($issuer, $apiBaseUrl, $legacyEntry);
+    }
+
+    private function activeEntry(): mixed
+    {
+        $data = $this->readConfig();
+        $apiBaseUrl = $this->urlResolver->getApiBaseUrl();
+        $key = $data['active_profiles'][$apiBaseUrl] ?? null;
+
+        if (is_string($key)) {
+            $profile = $this->validProfiles($data)[$key] ?? null;
+
+            if ($profile !== null) {
+                return $profile['credential'];
+            }
+        }
+
+        return $this->legacyEntries($data)[$this->urlResolver->getHostKey()] ?? null;
+    }
+
+    /**
+     * @param  string|array<string, mixed>  $entry
+     */
+    private function writeActiveEntry(string|array $entry): void
+    {
+        $data = $this->readConfig();
+        $apiBaseUrl = $this->urlResolver->getApiBaseUrl();
+        $key = $data['active_profiles'][$apiBaseUrl] ?? null;
+
+        if (! is_string($key) || ! isset($data['profiles'][$key])) {
+            throw new RuntimeException("No active credential profile exists for {$apiBaseUrl}.");
+        }
+
+        $data['profiles'][$key]['credential'] = $entry;
+
+        $this->writeConfig($data);
+    }
+
+    /**
+     * @param  array<string, mixed>  $data
+     * @return array<int, array{
+     *     key: string,
+     *     issuer: ?string,
+     *     api_base_url: string,
+     *     credential: string|array<string, mixed>,
+     *     oauth: bool,
+     *     legacy: bool,
+     *     active: bool
+     * }>
+     */
+    private function profileRows(array $data): array
+    {
+        $rows = [];
+        $activeProfiles = is_array($data['active_profiles'] ?? null) ? $data['active_profiles'] : [];
+
+        foreach ($this->validProfiles($data) as $key => $profile) {
+            $rows[] = [
+                'key' => $key,
+                'issuer' => $profile['issuer'],
+                'api_base_url' => $profile['api_base_url'],
+                'credential' => $profile['credential'],
+                'oauth' => TokenRecord::looksLikeRecord($profile['credential']),
+                'legacy' => false,
+                'active' => ($activeProfiles[$profile['api_base_url']] ?? null) === $key,
+            ];
+        }
+
+        foreach ($this->legacyEntries($data) as $host => $credential) {
+            $rows[] = [
+                'key' => "legacy:{$host}",
+                'issuer' => null,
+                'api_base_url' => $this->legacyApiBaseUrl($host),
+                'credential' => $credential,
+                'oauth' => TokenRecord::looksLikeRecord($credential),
+                'legacy' => true,
+                'active' => $host === $this->urlResolver->getHostKey(),
+            ];
+        }
+
+        usort(
+            $rows,
+            fn (array $first, array $second): int => $first['api_base_url'] <=> $second['api_base_url'],
+        );
+
+        return $rows;
     }
 
     private function ensureConfigDirectoryExists(): void
     {
         $directory = dirname($this->configPath);
 
-        if (! is_dir($directory)) {
-            mkdir($directory, 0755, true);
+        if (! is_dir($directory) && ! mkdir($directory, 0700, true) && ! is_dir($directory)) {
+            throw new RuntimeException("Could not create credential directory {$directory}.");
         }
+
+        $this->tightenPermissions($directory, 0700);
     }
 
     /** @return array<string, mixed> */
@@ -148,15 +443,129 @@ class CredentialStore
             return [];
         }
 
-        return json_decode(file_get_contents($this->configPath), true) ?? [];
+        if (! $this->permissionsVerified) {
+            $this->ensureConfigDirectoryExists();
+            $this->tightenPermissions($this->configPath, 0600);
+            $this->permissionsVerified = true;
+        }
+
+        $contents = file_get_contents($this->configPath);
+
+        if ($contents === false) {
+            return [];
+        }
+
+        return json_decode($contents, true) ?? [];
+    }
+
+    /** @param array<string, mixed> $data */
+    private function writeConfig(array $data): void
+    {
+        $this->ensureConfigDirectoryExists();
+        unset($data['token']);
+
+        if (isset($data['tokens']) && is_array($data['tokens']) && $data['tokens'] === []) {
+            unset($data['tokens']);
+        }
+
+        foreach (['profiles', 'active_profiles'] as $key) {
+            $value = $data[$key] ?? [];
+
+            if (is_array($value)) {
+                ksort($value);
+                $data[$key] = $value === [] ? (object) [] : $value;
+            }
+        }
+
+        $json = json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES);
+
+        if (! is_string($json)) {
+            throw new RuntimeException('Could not encode Flare credentials.');
+        }
+
+        $directory = dirname($this->configPath);
+        $temporaryPath = "{$directory}/.config.".bin2hex(random_bytes(8)).'.tmp';
+        $handle = fopen($temporaryPath, 'x+b');
+
+        if ($handle === false) {
+            throw new RuntimeException('Could not create a temporary credential file.');
+        }
+
+        try {
+            $this->tightenPermissions($temporaryPath, 0600);
+
+            if (fwrite($handle, $json) !== strlen($json)) {
+                throw new RuntimeException('Could not write the complete credential file.');
+            }
+
+            if (! fflush($handle)) {
+                throw new RuntimeException('Could not flush the credential file.');
+            }
+
+            if (! fsync($handle)) {
+                throw new RuntimeException('Could not sync the credential file.');
+            }
+
+            fclose($handle);
+            $handle = null;
+
+            if (! rename($temporaryPath, $this->configPath)) {
+                throw new RuntimeException('Could not atomically replace the credential file.');
+            }
+        } finally {
+            if (is_resource($handle)) {
+                fclose($handle);
+            }
+
+            if (file_exists($temporaryPath)) {
+                unlink($temporaryPath);
+            }
+        }
+    }
+
+    /**
+     * @return array<string, array{
+     *     issuer: ?string,
+     *     api_base_url: string,
+     *     credential: string|array<string, mixed>
+     * }>
+     */
+    private function validProfiles(array $data): array
+    {
+        $profiles = $data['profiles'] ?? [];
+
+        if (! is_array($profiles)) {
+            return [];
+        }
+
+        return array_filter(
+            $profiles,
+            function (mixed $profile, mixed $key): bool {
+                if (! is_string($key) || ! is_array($profile)) {
+                    return false;
+                }
+
+                if (! is_string($profile['api_base_url'] ?? null)) {
+                    return false;
+                }
+
+                $issuer = $profile['issuer'] ?? null;
+
+                if ($issuer !== null && ! is_string($issuer)) {
+                    return false;
+                }
+
+                return self::isValidEntry($profile['credential'] ?? null);
+            },
+            ARRAY_FILTER_USE_BOTH,
+        );
     }
 
     /**
      * @return array<string, string|array<string, mixed>>
      */
-    private function readEntries(): array
+    private function legacyEntries(array $data): array
     {
-        $data = $this->readConfig();
         $entries = $data['tokens'] ?? [];
 
         if (! is_array($entries)) {
@@ -170,10 +579,10 @@ class CredentialStore
         );
 
         if (
-            isset($data['token']) &&
-            is_string($data['token']) &&
-            $data['token'] !== '' &&
-            ! array_key_exists('flareapp.io', $entries)
+            isset($data['token'])
+            && is_string($data['token'])
+            && $data['token'] !== ''
+            && ! array_key_exists('flareapp.io', $entries)
         ) {
             $entries['flareapp.io'] = $data['token'];
         }
@@ -183,31 +592,18 @@ class CredentialStore
         return $entries;
     }
 
-    private function writeEntry(string $host, string|array $entry): void
+    private function legacyApiBaseUrl(string $host): string
     {
-        $this->ensureConfigDirectoryExists();
+        if ($host === $this->urlResolver->getHostKey()) {
+            return $this->urlResolver->getApiBaseUrl();
+        }
 
-        $entries = $this->readEntries();
-        $entries[$host] = $entry;
-
-        $this->writeEntries($entries);
+        return "https://{$host}/api";
     }
 
-    /**
-     * @param  array<string, string|array<string, mixed>>  $entries
-     */
-    private function writeEntries(array $entries): void
+    private static function profileKey(?string $issuer, string $apiBaseUrl): string
     {
-        ksort($entries);
-
-        $data = $this->readConfig();
-        unset($data['token']);
-        $data['tokens'] = $entries === [] ? (object) [] : $entries;
-
-        file_put_contents(
-            $this->configPath,
-            json_encode($data, JSON_PRETTY_PRINT | JSON_UNESCAPED_SLASHES),
-        );
+        return hash('sha256', ($issuer ?? 'personal-token')."\0{$apiBaseUrl}");
     }
 
     private static function isValidEntry(mixed $entry): bool
@@ -217,6 +613,19 @@ class CredentialStore
         }
 
         return TokenRecord::looksLikeRecord($entry);
+    }
+
+    private function tightenPermissions(string $path, int $mode): void
+    {
+        if (PHP_OS_FAMILY === 'Windows') {
+            @chmod($path, $mode);
+
+            return;
+        }
+
+        if (! chmod($path, $mode)) {
+            throw new RuntimeException("Could not set secure permissions on {$path}.");
+        }
     }
 
     /**
@@ -232,10 +641,16 @@ class CredentialStore
         $handle = fopen($lockPath, 'c+');
 
         if ($handle === false) {
-            return $callback();
+            throw new RuntimeException('Could not open the credential lock file.');
         }
 
-        flock($handle, LOCK_EX);
+        $this->tightenPermissions($lockPath, 0600);
+
+        if (! flock($handle, LOCK_EX)) {
+            fclose($handle);
+
+            throw new RuntimeException('Could not lock the credential file.');
+        }
 
         try {
             return $callback();

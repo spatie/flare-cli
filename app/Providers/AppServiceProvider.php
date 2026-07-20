@@ -6,8 +6,10 @@ use App\Services\CredentialStore;
 use App\Services\FlareDescriber;
 use App\Services\FlareUrlResolver;
 use App\Services\OAuth\DeviceLoginFlow;
+use App\Services\OAuth\OAuthDiscovery;
 use App\Services\OAuth\OAuthEndpoints;
 use App\Services\OAuth\OAuthHttpClient;
+use App\Services\OAuth\OAuthRevoker;
 use App\Services\OAuth\PkceLoginFlow;
 use App\Services\OAuth\TokenRefresher;
 use Illuminate\Console\Command;
@@ -38,30 +40,57 @@ class AppServiceProvider extends ServiceProvider
 
                 return app(CredentialStore::class)->forceRefresh();
             })
-            ->onError(function (Response $response, Command $command) {
-                if ($response->status() === 401) {
-                    $command->error(
-                        'Your API token is invalid or expired. Run `flare login` to authenticate.',
-                    );
+            ->onError(function (Response $response, Command $command) use ($urlResolver) {
+                $status = $response->status();
+
+                if (! in_array($status, [401, 403], true)) {
+                    return false;
+                }
+
+                if (
+                    $status === 401
+                    && app(CredentialStore::class)->lastRefreshError()?->errorCode === 'invalid_grant'
+                ) {
+                    $command->error('Your Flare OAuth session could not be refreshed and may have been revoked or changed.');
+                    $command->line('Run `flare login` to create a new connection.');
 
                     return true;
                 }
 
-                if ($response->status() === 403) {
-                    $message = $response->json('message');
+                $message = $response->json('message');
 
-                    // Token-grant denials from Flare's ApiAccessAuthorizer all start
-                    // with "Token " ("Token is missing the 'write' scope.", "Token
-                    // does not grant access to this team.", ...). Other 403s are
-                    // genuine permission errors that a re-login won't fix.
-                    if (is_string($message) && str_starts_with($message, 'Token ')) {
-                        $command->error($message);
-                        $command->line(
-                            'Run `flare login` to re-authenticate and adjust the scopes, teams, and projects granted to the CLI.',
-                        );
+                if ($message === 'Token has no resource authorization.') {
+                    $command->error('This Flare connection has been revoked.');
+                    $command->line('Run `flare login` to create a new connection.');
 
-                        return true;
-                    }
+                    return true;
+                }
+
+                if ($message === 'Token was issued for a different resource.') {
+                    $command->error('These credentials were issued for a different Flare resource.');
+                    $command->line('Run `flare login` for the active API profile.');
+
+                    return true;
+                }
+
+                if ($status === 401) {
+                    $command->error('Your Flare credentials are invalid or expired.');
+                    $command->line('Run `flare login` to authenticate again.');
+
+                    return true;
+                }
+
+                if (
+                    is_string($message)
+                    && (
+                        str_starts_with($message, 'Token ')
+                        || str_starts_with($message, 'Connection ')
+                    )
+                ) {
+                    $command->error($message);
+                    $command->line("Manage this connection at {$urlResolver->getAppUrl()}/account/api-access");
+
+                    return true;
                 }
 
                 return false;
@@ -74,9 +103,10 @@ class AppServiceProvider extends ServiceProvider
     public function register(): void
     {
         $this->app->singleton(FlareUrlResolver::class);
-        $this->app->singleton(CredentialStore::class);
-
+        $this->app->singleton(OAuthDiscovery::class);
         $this->app->singleton(OAuthEndpoints::class);
+        $this->app->singleton(CredentialStore::class);
+        $this->app->singleton(OAuthRevoker::class);
 
         $this->app->singleton(OAuthHttpClient::class, fn ($app) => new OAuthHttpClient(
             $app->make(OAuthEndpoints::class),

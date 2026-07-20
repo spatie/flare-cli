@@ -8,30 +8,42 @@ final class OAuthEndpoints
 {
     public function __construct(
         private readonly FlareUrlResolver $urlResolver,
+        private readonly OAuthDiscovery $discovery,
     ) {}
 
     public function authorize(): string
     {
-        return $this->base().'/oauth/authorize';
+        return $this->metadata()->authorizationEndpoint;
     }
 
     public function token(): string
     {
-        return $this->base().'/oauth/token';
+        return $this->metadata()->tokenEndpoint;
     }
 
     public function deviceCode(): string
     {
-        return $this->base().'/oauth/device/code';
+        return $this->metadata()->deviceAuthorizationEndpoint
+            ?? throw new OAuthException('The OAuth server did not provide a device authorization endpoint.');
     }
 
-    public function deviceVerification(): string
+    public function revocation(): string
     {
-        return $this->base().'/oauth/device';
+        return $this->metadata()->revocationEndpoint;
     }
 
-    private function base(): string
+    public function issuer(): string
     {
-        return rtrim($this->urlResolver->getAppUrl(), '/');
+        return $this->metadata()->issuer;
+    }
+
+    public function resource(): string
+    {
+        return $this->urlResolver->getApiBaseUrl();
+    }
+
+    public function metadata(): OAuthMetadata
+    {
+        return $this->discovery->metadata($this->urlResolver->getAppUrl());
     }
 }

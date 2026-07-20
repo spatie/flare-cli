@@ -39,3 +39,20 @@ it('normalizes the configured base URL and host key', function () {
     expect($resolver->getHostKey())->toBe('staging.flareapp.io');
     expect($resolver->getAppUrl())->toBe('https://staging.flareapp.io');
 });
+
+it('normalizes an origin to the default api path', function () {
+    putenv('FLARE_BASE_URL=https://self-hosted.test/');
+    $_SERVER['FLARE_BASE_URL'] = 'https://self-hosted.test/';
+
+    expect((new FlareUrlResolver)->getApiBaseUrl())->toBe('https://self-hosted.test/api');
+});
+
+it('preserves a non-default api path as a distinct base URL', function () {
+    putenv('FLARE_BASE_URL=https://self-hosted.test/custom/api/');
+    $_SERVER['FLARE_BASE_URL'] = 'https://self-hosted.test/custom/api/';
+
+    $resolver = new FlareUrlResolver;
+
+    expect($resolver->getApiBaseUrl())->toBe('https://self-hosted.test/custom/api');
+    expect($resolver->getAppUrl())->toBe('https://self-hosted.test/custom');
+});

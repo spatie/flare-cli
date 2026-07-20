@@ -23,6 +23,7 @@ class PkceLoginFlow
         callable $log,
         ?LocalCallbackServer $server = null,
         int $timeoutSeconds = 120,
+        ?string $connectionName = null,
     ): TokenRecord {
         $verifier = PkceCodes::verifier();
         $challenge = PkceCodes::challenge($verifier);
@@ -31,7 +32,7 @@ class PkceLoginFlow
         $server ??= new LocalCallbackServer;
 
         try {
-            $url = $this->buildAuthorizationUrl($server->redirectUri, $challenge, $state);
+            $url = $this->buildAuthorizationUrl($server->redirectUri, $challenge, $state, $connectionName);
 
             $log("Open this URL to continue: {$url}");
             $openBrowser($url);
@@ -67,9 +68,13 @@ class PkceLoginFlow
         }
     }
 
-    private function buildAuthorizationUrl(string $redirectUri, string $challenge, string $state): string
-    {
-        return $this->endpoints->authorize().'?'.http_build_query([
+    private function buildAuthorizationUrl(
+        string $redirectUri,
+        string $challenge,
+        string $state,
+        ?string $connectionName,
+    ): string {
+        $parameters = [
             'client_id' => $this->clientId,
             'redirect_uri' => $redirectUri,
             'response_type' => 'code',
@@ -77,7 +82,14 @@ class PkceLoginFlow
             'state' => $state,
             'code_challenge' => $challenge,
             'code_challenge_method' => 'S256',
-        ], '', '&', PHP_QUERY_RFC3986);
+            'resource' => $this->endpoints->resource(),
+        ];
+
+        if ($connectionName !== null) {
+            $parameters['connection_name'] = $connectionName;
+        }
+
+        return $this->endpoints->authorize().'?'.http_build_query($parameters, '', '&', PHP_QUERY_RFC3986);
     }
 
     public static function defaultBrowserOpener(string $url): void

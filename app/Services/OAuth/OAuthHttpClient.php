@@ -28,6 +28,7 @@ class OAuthHttpClient
             'redirect_uri' => $redirectUri,
             'code' => $code,
             'code_verifier' => $codeVerifier,
+            'resource' => $this->endpoints->resource(),
         ]);
 
         return $this->recordFromTokenResponse($response, $requestedScopes);
@@ -39,6 +40,7 @@ class OAuthHttpClient
             'grant_type' => 'refresh_token',
             'client_id' => $this->clientId,
             'refresh_token' => $record->refreshToken,
+            'resource' => $this->endpoints->resource(),
         ]);
 
         return $this->recordFromTokenResponse($response, $record->scopes, fallbackRefreshToken: $record->refreshToken);
@@ -47,14 +49,29 @@ class OAuthHttpClient
     /**
      * @param  array<int, string>  $scopes
      */
-    public function requestDeviceCode(array $scopes): DeviceAuthorization
+    public function requestDeviceCode(array $scopes, ?string $connectionName = null): DeviceAuthorization
     {
-        $response = $this->postForm($this->endpoints->deviceCode(), [
+        $form = [
             'client_id' => $this->clientId,
             'scope' => implode(' ', $scopes),
-        ]);
+            'resource' => $this->endpoints->resource(),
+        ];
+
+        if ($connectionName !== null) {
+            $form['connection_name'] = $connectionName;
+        }
+
+        $response = $this->postForm($this->endpoints->deviceCode(), $form);
 
         return DeviceAuthorization::fromArray($response);
+    }
+
+    public function revokeToken(string $revocationEndpoint, string $refreshToken): void
+    {
+        $this->postForm($revocationEndpoint, [
+            'token' => $refreshToken,
+            'token_type_hint' => 'refresh_token',
+        ]);
     }
 
     /**
@@ -66,6 +83,7 @@ class OAuthHttpClient
             'grant_type' => 'urn:ietf:params:oauth:grant-type:device_code',
             'client_id' => $this->clientId,
             'device_code' => $deviceCode,
+            'resource' => $this->endpoints->resource(),
         ]);
 
         if ($response->successful()) {
@@ -156,6 +174,8 @@ class OAuthHttpClient
             'scopes' => $scopes,
             'client_id' => $this->clientId,
             'obtained_at' => $now,
+            'issuer' => $this->endpoints->issuer(),
+            'api_base_url' => $this->endpoints->resource(),
         ]);
     }
 }

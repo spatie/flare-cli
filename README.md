@@ -35,22 +35,35 @@ composer global require spatie/flare-cli
 # Browser-based OAuth login (default)
 flare login
 
+# Suggest a workstation name on the editable consent screen
+flare login --name="Work laptop"
+
 # Device-code flow — useful over SSH, in containers, or any headless terminal
 flare login --device
 
-# Paste an existing personal access token
+# Paste a personal or legacy API token for automation and CI
 flare login --token
 
-# Log out of the active host
+# Revoke the active OAuth connection and remove its local credentials
 flare logout
 
-# Log out of every host
+# Revoke and remove every configured profile
 flare logout --all
+
+# Remove local credentials without contacting Flare
+flare logout --local-only
+
+# Inspect the active issuer/API profile and stored profiles
+flare auth
 ```
 
-`flare login` opens your browser to flareapp.io to confirm the requested scopes. The CLI listens on a random loopback port for the callback, exchanges the authorization code for tokens, and refreshes them transparently on subsequent calls. Personal access tokens are still supported via `--token` for scripts and CI; generate one at [flareapp.io/settings/api-tokens](https://flareapp.io/settings/api-tokens).
+`flare login` discovers the active server's OAuth endpoints, opens your browser, and asks you to approve the requested scopes and team/project access. Each login creates an independent connection. The CLI refreshes access tokens transparently and `flare logout` revokes that connection remotely before removing its local credentials.
 
-Set `FLARE_BASE_URL` to point the CLI at a non-production environment (for example `FLARE_BASE_URL=https://passport-oauth.test/api`). Set `FLARE_OAUTH_CLIENT_ID` to override the baked-in Flare CLI OAuth client UUID.
+Credentials are stored as issuer and API-base profiles in `~/.flare/config.json`. On macOS and Linux, the directory uses mode `0700` and the atomically replaced config file uses `0600`. Production, staging, and self-hosted credentials can coexist.
+
+Personal and legacy tokens remain supported through `--token` for scripts and CI. Create and manage personal tokens under [API Access](https://flareapp.io/account/api-access).
+
+Set `FLARE_BASE_URL` to point the CLI at a non-production environment (for example `FLARE_BASE_URL=https://passport-oauth.test/api`). An origin without a path defaults to `/api`; non-default paths remain distinct profiles. Set `FLARE_OAUTH_CLIENT_ID` to override the baked-in Flare CLI OAuth client UUID.
 
 ### Commands
 

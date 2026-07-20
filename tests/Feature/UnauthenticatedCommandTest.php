@@ -13,16 +13,7 @@ beforeEach(function () {
 });
 
 afterEach(function () {
-    $configFile = $this->tempDir.'/.flare/config.json';
-    if (file_exists($configFile)) {
-        unlink($configFile);
-    }
-    if (is_dir($this->tempDir.'/.flare')) {
-        rmdir($this->tempDir.'/.flare');
-    }
-    if (is_dir($this->tempDir)) {
-        rmdir($this->tempDir);
-    }
+    cleanupFlareHome($this->tempDir);
 });
 
 it('shows an error when running an API command without credentials', function () {

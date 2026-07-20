@@ -41,7 +41,33 @@ expect()->extend('toBeOne', function () {
 |
 */
 
-function something(): void
+/** @return array<string, mixed> */
+function oauthMetadata(string $issuer = 'https://passport-oauth.test'): array
 {
-    // ..
+    return [
+        'issuer' => $issuer,
+        'authorization_endpoint' => "{$issuer}/oauth/authorize",
+        'token_endpoint' => "{$issuer}/oauth/token",
+        'device_authorization_endpoint' => "{$issuer}/oauth/device/code",
+        'revocation_endpoint' => "{$issuer}/oauth/revoke",
+    ];
+}
+
+function cleanupFlareHome(string $home): void
+{
+    foreach (['config.json', 'config.json.lock'] as $name) {
+        $path = "{$home}/.flare/{$name}";
+
+        if (file_exists($path)) {
+            unlink($path);
+        }
+    }
+
+    if (is_dir("{$home}/.flare")) {
+        rmdir("{$home}/.flare");
+    }
+
+    if (is_dir($home)) {
+        rmdir($home);
+    }
 }

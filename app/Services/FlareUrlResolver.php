@@ -15,6 +15,10 @@ class FlareUrlResolver
 
     private const DEFAULT_HOST_KEY = 'flareapp.io';
 
+    public function __construct(
+        private readonly ?string $baseUrl = null,
+    ) {}
+
     public function getApiBaseUrl(): string
     {
         return $this->normalizeApiBaseUrl($this->configuredBaseUrl());
@@ -66,6 +70,10 @@ class FlareUrlResolver
 
     private function configuredBaseUrl(): ?string
     {
+        if ($this->baseUrl !== null) {
+            return $this->baseUrl;
+        }
+
         $baseUrl = $_SERVER['FLARE_BASE_URL'] ?? getenv('FLARE_BASE_URL') ?: null;
 
         if ($baseUrl === null) {
@@ -97,11 +105,11 @@ class FlareUrlResolver
 
         $path = trim((string) ($parts['path'] ?? ''), '/');
 
-        if ($path !== '') {
-            $normalized .= "/{$path}";
+        if ($path === '') {
+            return "{$normalized}/api";
         }
 
-        return $normalized;
+        return "{$normalized}/{$path}";
     }
 
     private function canonicalHost(string $host): string

@@ -2,6 +2,7 @@
 
 use App\Services\FlareUrlResolver;
 use App\Services\OAuth\DevicePollResult;
+use App\Services\OAuth\OAuthDiscovery;
 use App\Services\OAuth\OAuthEndpoints;
 use App\Services\OAuth\OAuthException;
 use App\Services\OAuth\OAuthHttpClient;
@@ -12,8 +13,12 @@ beforeEach(function () {
     putenv('FLARE_BASE_URL=https://passport-oauth.test/api');
     $_SERVER['FLARE_BASE_URL'] = 'https://passport-oauth.test/api';
 
+    Http::fake([
+        'https://passport-oauth.test/.well-known/oauth-authorization-server' => Http::response(oauthMetadata()),
+    ]);
+
     $this->client = new OAuthHttpClient(
-        new OAuthEndpoints(new FlareUrlResolver),
+        new OAuthEndpoints(new FlareUrlResolver, new OAuthDiscovery),
         clientId: 'client-uuid',
     );
 });
@@ -25,6 +30,7 @@ afterEach(function () {
 
 it('exchanges an authorization code for a TokenRecord', function () {
     Http::fake([
+        'https://passport-oauth.test/.well-known/oauth-authorization-server' => Http::response(oauthMetadata()),
         'https://passport-oauth.test/oauth/token' => Http::response([
             'access_token' => 'new-access',
             'refresh_token' => 'new-refresh',
@@ -54,12 +60,14 @@ it('exchanges an authorization code for a TokenRecord', function () {
             && $request['code'] === 'auth-code'
             && $request['code_verifier'] === 'verifier-string'
             && $request['redirect_uri'] === 'http://127.0.0.1:54321/callback'
+            && $request['resource'] === 'https://passport-oauth.test/api'
             && ! isset($request['client_secret']);
     });
 });
 
 it('refreshes an access token and preserves rotated refresh tokens', function () {
     Http::fake([
+        'https://passport-oauth.test/.well-known/oauth-authorization-server' => Http::response(oauthMetadata()),
         'https://passport-oauth.test/oauth/token' => Http::response([
             'access_token' => 'refreshed-access',
             'refresh_token' => 'rotated-refresh',
@@ -82,12 +90,15 @@ it('refreshes an access token and preserves rotated refresh tokens', function ()
     expect($refreshed->refreshToken)->toBe('rotated-refresh');
     expect($refreshed->scopes)->toBe(['read', 'write']);
 
-    Http::assertSent(fn ($request) => $request['grant_type'] === 'refresh_token'
-        && $request['refresh_token'] === 'old-refresh');
+    Http::assertSent(fn ($request) => $request->url() === 'https://passport-oauth.test/oauth/token'
+        && $request['grant_type'] === 'refresh_token'
+        && $request['refresh_token'] === 'old-refresh'
+        && $request['resource'] === 'https://passport-oauth.test/api');
 });
 
 it('keeps the existing refresh token when the response does not rotate it', function () {
     Http::fake([
+        'https://passport-oauth.test/.well-known/oauth-authorization-server' => Http::response(oauthMetadata()),
         'https://passport-oauth.test/oauth/token' => Http::response([
             'access_token' => 'refreshed-access',
             'expires_in' => 1296000,
@@ -110,6 +121,7 @@ it('keeps the existing refresh token when the response does not rotate it', func
 
 it('throws an OAuthException with the server error code on a 400 token response', function () {
     Http::fake([
+        'https://passport-oauth.test/.well-known/oauth-authorization-server' => Http::response(oauthMetadata()),
         'https://passport-oauth.test/oauth/token' => Http::response([
             'error' => 'invalid_grant',
             'error_description' => 'The refresh token is invalid.',
@@ -136,6 +148,7 @@ it('throws an OAuthException with the server error code on a 400 token response'
 
 it('requests a device code and parses the response', function () {
     Http::fake([
+        'https://passport-oauth.test/.well-known/oauth-authorization-server' => Http::response(oauthMetadata()),
         'https://passport-oauth.test/oauth/device/code' => Http::response([
             'device_code' => 'dev-code-123',
             'user_code' => 'ABCD-EFGH',
@@ -146,7 +159,7 @@ it('requests a device code and parses the response', function () {
         ]),
     ]);
 
-    $auth = $this->client->requestDeviceCode(['read', 'write']);
+    $auth = $this->client->requestDeviceCode(['read', 'write'], 'Workstation');
 
     expect($auth->deviceCode)->toBe('dev-code-123');
     expect($auth->userCode)->toBe('ABCD-EFGH');
@@ -154,12 +167,16 @@ it('requests a device code and parses the response', function () {
     expect($auth->interval)->toBe(5);
     expect($auth->expiresIn)->toBe(600);
 
-    Http::assertSent(fn ($request) => $request['client_id'] === 'client-uuid'
-        && $request['scope'] === 'read write');
+    Http::assertSent(fn ($request) => $request->url() === 'https://passport-oauth.test/oauth/device/code'
+        && $request['client_id'] === 'client-uuid'
+        && $request['scope'] === 'read write'
+        && $request['connection_name'] === 'Workstation'
+        && $request['resource'] === 'https://passport-oauth.test/api');
 });
 
 it('polls the token endpoint and returns success when tokens arrive', function () {
     Http::fake([
+        'https://passport-oauth.test/.well-known/oauth-authorization-server' => Http::response(oauthMetadata()),
         'https://passport-oauth.test/oauth/token' => Http::response([
             'access_token' => 'device-access',
             'refresh_token' => 'device-refresh',
@@ -172,10 +189,15 @@ it('polls the token endpoint and returns success when tokens arrive', function (
     expect($result)->toBeInstanceOf(DevicePollResult::class);
     expect($result->isPending())->toBeFalse();
     expect($result->record?->accessToken)->toBe('device-access');
+
+    Http::assertSent(fn ($request) => $request->url() === 'https://passport-oauth.test/oauth/token'
+        && $request['grant_type'] === 'urn:ietf:params:oauth:grant-type:device_code'
+        && $request['resource'] === 'https://passport-oauth.test/api');
 });
 
 it('returns a pending poll result on authorization_pending', function () {
     Http::fake([
+        'https://passport-oauth.test/.well-known/oauth-authorization-server' => Http::response(oauthMetadata()),
         'https://passport-oauth.test/oauth/token' => Http::response([
             'error' => 'authorization_pending',
         ], 400),
@@ -189,6 +211,7 @@ it('returns a pending poll result on authorization_pending', function () {
 
 it('returns a slow_down poll result distinctly from pending', function () {
     Http::fake([
+        'https://passport-oauth.test/.well-known/oauth-authorization-server' => Http::response(oauthMetadata()),
         'https://passport-oauth.test/oauth/token' => Http::response([
             'error' => 'slow_down',
         ], 400),
@@ -203,6 +226,7 @@ it('returns a slow_down poll result distinctly from pending', function () {
 
 it('flags fatal device-flow errors', function () {
     Http::fake([
+        'https://passport-oauth.test/.well-known/oauth-authorization-server' => Http::response(oauthMetadata()),
         'https://passport-oauth.test/oauth/token' => Http::response([
             'error' => 'access_denied',
             'error_description' => 'The user denied the request.',

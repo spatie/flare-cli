@@ -21,6 +21,7 @@ class LoginCommand extends Command
     protected $signature = 'login
                             {--token : Paste a personal access token instead of using the browser flow}
                             {--device : Use the device code flow (for headless terminals)}
+                            {--name= : Suggest a workstation connection name}
                             {--timeout=120 : Seconds to wait for the OAuth callback}';
 
     protected $description = 'Authenticate with Flare via OAuth, device code, or a personal access token';
@@ -35,21 +36,29 @@ class LoginCommand extends Command
         $this->showActiveContext($urlResolver);
 
         if ($this->option('token')) {
+            if ($this->option('name') !== null) {
+                $this->error('The --name option is only available for OAuth login.');
+
+                return self::FAILURE;
+            }
+
             return $this->loginWithPersonalAccessToken($credentials, $urlResolver);
         }
 
+        $connectionName = $this->connectionName();
+
         if ($this->option('device')) {
-            return $this->loginWithDeviceCode($credentials, $urlResolver, $device);
+            return $this->loginWithDeviceCode($credentials, $urlResolver, $device, $connectionName);
         }
 
         if (! $this->isInteractiveTerminal()) {
             $this->warn('Non-interactive terminal detected. Falling back to --device.');
             $this->newLine();
 
-            return $this->loginWithDeviceCode($credentials, $urlResolver, $device);
+            return $this->loginWithDeviceCode($credentials, $urlResolver, $device, $connectionName);
         }
 
-        return $this->loginWithBrowser($credentials, $urlResolver, $pkce);
+        return $this->loginWithBrowser($credentials, $urlResolver, $pkce, $connectionName);
     }
 
     private function isInteractiveTerminal(): bool
@@ -76,8 +85,9 @@ class LoginCommand extends Command
             $this->newLine();
         }
 
-        $tokenUrl = "{$urlResolver->getAppUrl()}/account/api-tokens";
-        $this->line("You can generate a token at <href={$tokenUrl}>{$tokenUrl}</>");
+        $tokenUrl = "{$urlResolver->getAppUrl()}/account/api-access";
+        $this->line('Personal tokens are intended for automation and CI.');
+        $this->line("You can generate one at <href={$tokenUrl}>{$tokenUrl}</>");
         $this->newLine();
 
         $token = $this->secret('Enter your Flare API token');
@@ -115,16 +125,22 @@ class LoginCommand extends Command
         CredentialStore $credentials,
         FlareUrlResolver $urlResolver,
         PkceLoginFlow $pkce,
+        ?string $connectionName,
     ): int {
         $this->line('Opening your browser to log in. Sign in and approve the requested permissions.');
-        $this->line('Run `<comment>flare login --token</comment>` if you prefer pasting a personal access token.');
+        $this->line('Use `<comment>flare login --token</comment>` for automation and CI.');
         $this->newLine();
 
         $opener = $this->makeBrowserOpener();
         $logger = fn (string $message) => $this->line($message);
 
         try {
-            $record = $pkce->run($opener, $logger, timeoutSeconds: (int) $this->option('timeout'));
+            $record = $pkce->run(
+                $opener,
+                $logger,
+                timeoutSeconds: (int) $this->option('timeout'),
+                connectionName: $connectionName,
+            );
         } catch (OAuthException $e) {
             $this->error($e->getMessage());
 
@@ -181,6 +197,7 @@ class LoginCommand extends Command
         CredentialStore $credentials,
         FlareUrlResolver $urlResolver,
         DeviceLoginFlow $device,
+        ?string $connectionName,
     ): int {
         $this->line('Starting device code authentication.');
         $this->newLine();
@@ -198,7 +215,7 @@ class LoginCommand extends Command
         };
 
         try {
-            $record = $device->run($announce);
+            $record = $device->run($announce, connectionName: $connectionName);
         } catch (OAuthException $e) {
             $this->error($e->getMessage());
 
@@ -210,5 +227,22 @@ class LoginCommand extends Command
         $email = $this->fetchEmail($record, $urlResolver);
 
         return $this->reportSuccess($email ?? 'unknown', $urlResolver);
+    }
+
+    private function connectionName(): ?string
+    {
+        $option = $this->option('name');
+
+        if (is_string($option) && trim($option) !== '') {
+            return trim($option);
+        }
+
+        $hostname = gethostname();
+
+        if (! is_string($hostname) || trim($hostname) === '') {
+            return null;
+        }
+
+        return $hostname;
     }
 }

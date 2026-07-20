@@ -32,19 +32,7 @@ afterEach(function () {
         $_SERVER['FLARE_BASE_URL'] = $this->originalBaseUrl;
     }
 
-    $configDir = $this->tempDir.'/.flare';
-    foreach (['config.json', 'config.json.lock'] as $name) {
-        $path = "{$configDir}/{$name}";
-        if (file_exists($path)) {
-            unlink($path);
-        }
-    }
-    if (is_dir($configDir)) {
-        rmdir($configDir);
-    }
-    if (is_dir($this->tempDir)) {
-        rmdir($this->tempDir);
-    }
+    cleanupFlareHome($this->tempDir);
 });
 
 function loginRecord(array $overrides = []): TokenRecord
@@ -135,7 +123,7 @@ it('validates the --token against the active base URL', function () {
     $this->artisan('login --token')
         ->expectsQuestion('Enter your Flare API token', 'staging-token-123')
         ->expectsOutputToContain('https://staging.flareapp.io/api')
-        ->expectsOutputToContain('https://staging.flareapp.io/account/api-tokens')
+        ->expectsOutputToContain('https://staging.flareapp.io/account/api-access')
         ->expectsOutputToContain('Successfully logged in as alex+staging@spatie.be')
         ->assertExitCode(0);
 
@@ -282,4 +270,44 @@ it('falls back to device flow when the terminal is non-interactive', function ()
         ->assertExitCode(0);
 
     expect($this->store->getRecord()?->accessToken)->toBe('fallback-access');
+});
+
+it('passes --name to the browser OAuth flow', function () {
+    Http::fake([
+        'flareapp.io/api/me' => Http::response(['email' => 'alex@spatie.be']),
+    ]);
+
+    $flow = Mockery::mock(PkceLoginFlow::class);
+    $flow->shouldReceive('run')
+        ->once()
+        ->withArgs(fn (...$arguments): bool => $arguments[4] === 'Alex Laptop')
+        ->andReturn(loginRecord());
+    $this->app->instance(PkceLoginFlow::class, $flow);
+
+    $this->artisan('login --name="Alex Laptop"')
+        ->assertExitCode(0);
+});
+
+it('passes --name to the device OAuth flow', function () {
+    Http::fake([
+        'flareapp.io/api/me' => Http::response(['email' => 'alex@spatie.be']),
+    ]);
+
+    $device = Mockery::mock(DeviceLoginFlow::class);
+    $device->shouldReceive('run')
+        ->once()
+        ->withArgs(fn (...$arguments): bool => $arguments[3] === 'Build Server')
+        ->andReturn(loginRecord());
+    $this->app->instance(DeviceLoginFlow::class, $device);
+
+    $this->artisan('login --device --name="Build Server"')
+        ->assertExitCode(0);
+});
+
+it('rejects --name with personal token login', function () {
+    $this->artisan('login --token --name="Not applicable"')
+        ->expectsOutput('The --name option is only available for OAuth login.')
+        ->assertExitCode(1);
+
+    expect($this->store->getToken())->toBeNull();
 });

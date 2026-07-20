@@ -23,11 +23,12 @@ class DeviceLoginFlow
         callable $announce,
         ?Closure $sleeper = null,
         ?Closure $clock = null,
+        ?string $connectionName = null,
     ): TokenRecord {
         $sleeper ??= fn (int $seconds) => sleep($seconds);
         $clock ??= fn () => time();
 
-        $auth = $this->client->requestDeviceCode($this->scopes);
+        $auth = $this->client->requestDeviceCode($this->scopes, $connectionName);
         $announce($auth);
 
         $interval = $auth->interval;

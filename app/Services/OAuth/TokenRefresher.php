@@ -9,13 +9,9 @@ class TokenRefresher
         private readonly int $thresholdSeconds = 60,
     ) {}
 
-    public function refreshIfNeeded(TokenRecord $record, ?int $now = null): TokenRecord
+    public function shouldRefresh(TokenRecord $record, ?int $now = null): bool
     {
-        if (! $record->isExpiringWithin($this->thresholdSeconds, $now)) {
-            return $record;
-        }
-
-        return $this->client->refresh($record);
+        return $record->isExpiringWithin($this->thresholdSeconds, $now);
     }
 
     public function refresh(TokenRecord $record): TokenRecord

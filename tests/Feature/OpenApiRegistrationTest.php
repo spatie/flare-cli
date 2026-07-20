@@ -30,16 +30,7 @@ afterEach(function () {
     app()->forgetInstance(FlareUrlResolver::class);
     (new AppServiceProvider($this->app))->boot();
 
-    $configFile = $this->tempDir.'/.flare/config.json';
-    if (file_exists($configFile)) {
-        unlink($configFile);
-    }
-    if (is_dir($this->tempDir.'/.flare')) {
-        rmdir($this->tempDir.'/.flare');
-    }
-    if (is_dir($this->tempDir)) {
-        rmdir($this->tempDir);
-    }
+    cleanupFlareHome($this->tempDir);
 });
 
 it('registers the OpenAPI commands with the active base URL and auth context', function () {

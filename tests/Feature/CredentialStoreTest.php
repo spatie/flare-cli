@@ -42,20 +42,7 @@ afterEach(function () {
         $_SERVER['FLARE_BASE_URL'] = $this->originalBaseUrl;
     }
 
-    // Clean up temp directory
-    $configDir = $this->tempDir.'/.flare';
-    foreach (['config.json', 'config.json.lock'] as $name) {
-        $path = "{$configDir}/{$name}";
-        if (file_exists($path)) {
-            unlink($path);
-        }
-    }
-    if (is_dir($configDir)) {
-        rmdir($configDir);
-    }
-    if (is_dir($this->tempDir)) {
-        rmdir($this->tempDir);
-    }
+    cleanupFlareHome($this->tempDir);
 });
 
 it('returns null when no config file exists', function () {
@@ -126,8 +113,13 @@ it('writes pretty-printed JSON', function () {
     $contents = file_get_contents($configFile);
 
     expect($contents)->toContain("\n");
-    expect(json_decode($contents, true))->toBe([
-        'tokens' => ['flareapp.io' => 'test-token'],
+    $config = json_decode($contents, true);
+    $profileKey = $config['active_profiles']['https://flareapp.io/api'];
+
+    expect($config['profiles'][$profileKey])->toBe([
+        'issuer' => null,
+        'api_base_url' => 'https://flareapp.io/api',
+        'credential' => 'test-token',
     ]);
 });
 
@@ -140,7 +132,8 @@ it('falls back to the legacy production token', function () {
     );
 
     expect($this->store->getToken())->toBe('legacy-production-token');
-    expect($this->store->getConfiguredHosts())->toBe(['flareapp.io']);
+    expect(array_column($this->store->getConfiguredProfiles(), 'api_base_url'))
+        ->toBe(['https://flareapp.io/api']);
 });
 
 it('does not apply the legacy production token to other hosts', function () {
@@ -157,7 +150,8 @@ it('does not apply the legacy production token to other hosts', function () {
     $stagingStore = new CredentialStore(new FlareUrlResolver);
 
     expect($stagingStore->getToken())->toBeNull();
-    expect($stagingStore->getConfiguredHosts())->toBe(['flareapp.io']);
+    expect(array_column($stagingStore->getConfiguredProfiles(), 'api_base_url'))
+        ->toBe(['https://flareapp.io/api']);
 });
 
 it('stores and retrieves an OAuth record', function () {
@@ -201,7 +195,8 @@ it('allows a string token and an OAuth record to coexist for different hosts', f
     $productionStore = new CredentialStore(new FlareUrlResolver);
     expect($productionStore->getToken())->toBe('production-pat');
     expect($productionStore->getRecord())->toBeNull();
-    expect($productionStore->getConfiguredHosts())->toBe(['flareapp.io', 'passport-oauth.test']);
+    expect(array_column($productionStore->getConfiguredProfiles(), 'api_base_url'))
+        ->toBe(['https://flareapp.io/api', 'https://passport-oauth.test/api']);
 });
 
 it('replaces an OAuth record when setToken is called for the same host', function () {
@@ -242,7 +237,8 @@ it('ignores entries that are neither strings nor OAuth records', function () {
         ], JSON_PRETTY_PRINT),
     );
 
-    expect($this->store->getConfiguredHosts())->toBe(['flareapp.io']);
+    expect(array_column($this->store->getConfiguredProfiles(), 'api_base_url'))
+        ->toBe(['https://flareapp.io/api']);
 });
 
 it('returns the stored string verbatim via getAccessToken for legacy tokens', function () {
@@ -258,7 +254,11 @@ it('refreshes and writes back when getAccessToken finds a near-expiry OAuth reco
     $this->store->setRecord($stale);
 
     $refresher = Mockery::mock(TokenRefresher::class);
-    $refresher->shouldReceive('refreshIfNeeded')
+    $refresher->shouldReceive('shouldRefresh')
+        ->once()
+        ->with(Mockery::on(fn (TokenRecord $record): bool => $record->accessToken === 'stale'))
+        ->andReturnTrue();
+    $refresher->shouldReceive('refresh')
         ->once()
         ->andReturn($fresh);
 
@@ -269,7 +269,7 @@ it('refreshes and writes back when getAccessToken finds a near-expiry OAuth reco
     expect($this->store->getRecord()?->refreshToken)->toBe('rotated');
 });
 
-it('does not write back when refreshIfNeeded returns the same record', function () {
+it('does not write back when the record does not need a refresh', function () {
     $record = makeRecord(['expires_at' => time() + 99999]);
     $this->store->setRecord($record);
 
@@ -277,9 +277,10 @@ it('does not write back when refreshIfNeeded returns the same record', function 
     $originalMtime = filemtime($configPath);
 
     $refresher = Mockery::mock(TokenRefresher::class);
-    $refresher->shouldReceive('refreshIfNeeded')
+    $refresher->shouldReceive('shouldRefresh')
         ->once()
-        ->andReturnUsing(fn ($current) => $current);
+        ->with(Mockery::on(fn (TokenRecord $candidate): bool => $candidate->accessToken === $record->accessToken))
+        ->andReturnFalse();
 
     app()->instance(TokenRefresher::class, $refresher);
 
@@ -323,4 +324,96 @@ it('returns false from forceRefresh when the refresh call fails', function () {
     app()->instance(TokenRefresher::class, $refresher);
 
     expect($this->store->forceRefresh())->toBeFalse();
+});
+
+it('persists an ambiguous refresh attempt and never replays its token', function () {
+    $record = makeRecord(['expires_at' => time() - 1]);
+    $this->store->setRecord($record);
+
+    $refresher = Mockery::mock(TokenRefresher::class);
+    $refresher->shouldReceive('shouldRefresh')->once()->andReturnTrue();
+    $refresher->shouldReceive('refresh')
+        ->once()
+        ->andThrow(new OAuthException('Connection timed out'));
+
+    app()->instance(TokenRefresher::class, $refresher);
+
+    expect($this->store->getAccessToken())->toBe('access-abc');
+    expect($this->store->getRecord()?->refreshPending)->toBeTrue();
+    expect($this->store->forceRefresh())->toBeFalse();
+});
+
+it('writes secure directory config and lock permissions on POSIX systems', function () {
+    if (PHP_OS_FAMILY === 'Windows') {
+        $this->markTestSkipped('POSIX permission modes are not available on Windows.');
+    }
+
+    $this->store->setToken('secure-token');
+
+    $directory = $this->tempDir.'/.flare';
+    $config = "{$directory}/config.json";
+    $lock = "{$directory}/config.json.lock";
+
+    clearstatcache();
+
+    expect(fileperms($directory) & 0777)->toBe(0700);
+    expect(fileperms($config) & 0777)->toBe(0600);
+    expect(fileperms($lock) & 0777)->toBe(0600);
+});
+
+it('tightens existing credential permissions when touched', function () {
+    if (PHP_OS_FAMILY === 'Windows') {
+        $this->markTestSkipped('POSIX permission modes are not available on Windows.');
+    }
+
+    $directory = $this->tempDir.'/.flare';
+    mkdir($directory, 0777, true);
+    file_put_contents("{$directory}/config.json", json_encode([
+        'tokens' => ['flareapp.io' => 'legacy-token'],
+    ]));
+    chmod($directory, 0777);
+    chmod("{$directory}/config.json", 0666);
+
+    $this->store->getToken();
+
+    clearstatcache();
+
+    expect(fileperms($directory) & 0777)->toBe(0700);
+    expect(fileperms("{$directory}/config.json") & 0777)->toBe(0600);
+});
+
+it('atomically migrates an active legacy OAuth profile', function () {
+    $directory = $this->tempDir.'/.flare';
+    mkdir($directory, 0755, true);
+    file_put_contents("{$directory}/config.json", json_encode([
+        'tokens' => [
+            'flareapp.io' => makeRecord([
+                'expires_at' => time() + 99999,
+            ])->toArray(),
+        ],
+    ]));
+
+    $store = new CredentialStore(new FlareUrlResolver);
+
+    expect($store->getAccessToken())->toBe('access-abc');
+
+    $config = json_decode(file_get_contents("{$directory}/config.json"), true);
+    $profileKey = $config['active_profiles']['https://flareapp.io/api'];
+
+    expect($config)->not->toHaveKey('tokens');
+    expect($config['profiles'])->toHaveCount(1);
+    expect($config['profiles'][$profileKey]['issuer'])->toBe('https://flareapp.io');
+    expect($config['profiles'][$profileKey]['credential']['refresh_token'])->toBe('refresh-xyz');
+});
+
+it('keeps default and custom API paths in separate profiles', function () {
+    $defaultStore = new CredentialStore(new FlareUrlResolver('https://self-hosted.test'));
+    $customStore = new CredentialStore(new FlareUrlResolver('https://self-hosted.test/custom/api'));
+
+    $defaultStore->setToken('default-token');
+    $customStore->setToken('custom-token');
+
+    expect($defaultStore->getToken())->toBe('default-token');
+    expect($customStore->getToken())->toBe('custom-token');
+    expect($customStore->getConfiguredProfiles())->toHaveCount(2);
 });
