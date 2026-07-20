@@ -4,7 +4,7 @@
         "Read more about it at https://getcomposer.org/doc/01-basic-usage.md#installing-dependencies",
         "This file is @generated automatically"
     ],
-    "content-hash": "fd27cd87259baa2cefdb5dbf33138d0a",
+    "content-hash": "aeb7b569c7ad3ec7bd185a7535c0484d",
     "packages": [],
     "packages-dev": [
         {
@@ -6987,11 +6987,17 @@
         },
         {
             "name": "spatie/laravel-openapi-cli",
-            "version": "dev-auth-exception",
+            "version": "1.4.0",
+            "source": {
+                "type": "git",
+                "url": "https://github.com/spatie/laravel-openapi-cli.git",
+                "reference": "6689c2daab8da61bb782488ad17f84dd97eba098"
+            },
             "dist": {
-                "type": "path",
-                "url": "../laravel-openapi-cli",
-                "reference": "f60e78c1601c8f9b8e22d27326696244ed6ae1ab"
+                "type": "zip",
+                "url": "https://api.github.com/repos/spatie/laravel-openapi-cli/zipball/6689c2daab8da61bb782488ad17f84dd97eba098",
+                "reference": "6689c2daab8da61bb782488ad17f84dd97eba098",
+                "shasum": ""
             },
             "require": {
                 "illuminate/contracts": "^11.0||^12.0",
@@ -7015,12 +7021,12 @@
             "type": "library",
             "extra": {
                 "laravel": {
-                    "providers": [
-                        "Spatie\\OpenApiCli\\OpenApiCliServiceProvider"
-                    ],
                     "aliases": {
                         "OpenApiCli": "Spatie\\OpenApiCli\\Facades\\OpenApiCli"
-                    }
+                    },
+                    "providers": [
+                        "Spatie\\OpenApiCli\\OpenApiCliServiceProvider"
+                    ]
                 }
             },
             "autoload": {
@@ -7029,32 +7035,7 @@
                     "Spatie\\OpenApiCli\\Database\\Factories\\": "database/factories/"
                 }
             },
-            "autoload-dev": {
-                "psr-4": {
-                    "Spatie\\OpenApiCli\\Tests\\": "tests/",
-                    "Workbench\\App\\": "workbench/app/"
-                }
-            },
-            "scripts": {
-                "post-autoload-dump": [
-                    "@composer run prepare"
-                ],
-                "prepare": [
-                    "@php vendor/bin/testbench package:discover --ansi"
-                ],
-                "analyse": [
-                    "vendor/bin/phpstan analyse"
-                ],
-                "test": [
-                    "vendor/bin/pest"
-                ],
-                "test-coverage": [
-                    "vendor/bin/pest --coverage"
-                ],
-                "format": [
-                    "vendor/bin/pint"
-                ]
-            },
+            "notification-url": "https://packagist.org/downloads/",
             "license": [
                 "MIT"
             ],
@@ -7068,13 +7049,21 @@
             "description": "Create a Laravel command for your OpenAPI spec(s). Works in apps and other packages. Useful for AI agents.",
             "homepage": "https://github.com/spatie/laravel-openapi-cli",
             "keywords": [
-                "Spatie",
                 "laravel",
-                "laravel-openapi-cli"
+                "laravel-openapi-cli",
+                "spatie"
             ],
-            "transport-options": {
-                "relative": true
-            }
+            "support": {
+                "issues": "https://github.com/spatie/laravel-openapi-cli/issues",
+                "source": "https://github.com/spatie/laravel-openapi-cli/tree/1.4.0"
+            },
+            "funding": [
+                {
+                    "url": "https://github.com/Spatie",
+                    "type": "github"
+                }
+            ],
+            "time": "2026-07-20T19:57:30+00:00"
         },
         {
             "name": "spatie/laravel-package-tools",
@@ -9759,18 +9748,9 @@
             "time": "2026-06-15T15:31:57+00:00"
         }
     ],
-    "aliases": [
-        {
-            "package": "spatie/laravel-openapi-cli",
-            "version": "dev-auth-exception",
-            "alias": "1.4.0",
-            "alias_normalized": "1.4.0.0"
-        }
-    ],
+    "aliases": [],
     "minimum-stability": "stable",
-    "stability-flags": {
-        "spatie/laravel-openapi-cli": 20
-    },
+    "stability-flags": {},
     "prefer-stable": true,
     "prefer-lowest": false,
     "platform": {

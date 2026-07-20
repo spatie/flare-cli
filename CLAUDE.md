@@ -27,7 +27,7 @@ A standalone CLI tool for [Flare](https://flareapp.io) built on Laravel Zero. Us
 
 ## Development setup
 
-The `spatie/laravel-openapi-cli` package is loaded via a Composer path repository pointing to `../laravel-openapi-cli` with symlink. Run `composer update` after cloning both repos side by side.
+The `spatie/laravel-openapi-cli` package is installed from Packagist. To develop against a local checkout, temporarily add a path repository pointing to `../laravel-openapi-cli` (with a `dev-<branch> as <version>` alias, since `minimum-stability` is `stable`) and revert before committing a release.
 
 ## AI agent skill
 
