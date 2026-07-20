@@ -6,12 +6,11 @@ use App\Services\OAuth\OAuthException;
 use App\Services\OAuth\TokenRecord;
 use App\Services\OAuth\TokenRefresher;
 use RuntimeException;
+use Spatie\OpenApiCli\Exceptions\AuthenticationException;
 
 class CredentialStore
 {
     private string $configPath;
-
-    private ?OAuthException $lastRefreshError = null;
 
     private bool $permissionsVerified = false;
 
@@ -88,12 +87,10 @@ class CredentialStore
     private function refreshLocked(TokenRecord $current, TokenRefresher $refresher): TokenRecord
     {
         if ($current->refreshPending) {
-            $this->lastRefreshError = new OAuthException(
+            throw new AuthenticationException(
                 'The previous refresh result is unknown. Log in again to avoid replaying a single-use refresh token.',
-                errorCode: 'refresh_replay_risk',
+                hint: 'Run `flare login` to create a new connection.',
             );
-
-            return $current;
         }
 
         $pending = $current->markRefreshPending();
@@ -102,11 +99,15 @@ class CredentialStore
         try {
             $refreshed = $refresher->refresh($pending);
             $this->writeActiveEntry($refreshed->toArray());
-            $this->lastRefreshError = null;
 
             return $refreshed;
         } catch (OAuthException $exception) {
-            $this->lastRefreshError = $exception;
+            if ($exception->errorCode === 'invalid_grant') {
+                throw new AuthenticationException(
+                    'Your Flare OAuth session could not be refreshed and may have been revoked or changed.',
+                    hint: 'Run `flare login` to create a new connection.',
+                );
+            }
 
             return $pending;
         }
@@ -116,7 +117,7 @@ class CredentialStore
     {
         $this->migrateActiveLegacyEntry();
 
-        if ($this->getRecord() === null || $this->lastRefreshError !== null) {
+        if ($this->getRecord() === null) {
             return false;
         }
 
@@ -131,11 +132,6 @@ class CredentialStore
 
             return $refreshed !== $current && ! $refreshed->refreshPending;
         });
-    }
-
-    public function lastRefreshError(): ?OAuthException
-    {
-        return $this->lastRefreshError;
     }
 
     public function setRecord(TokenRecord $record): void

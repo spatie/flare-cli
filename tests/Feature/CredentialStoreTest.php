@@ -5,6 +5,7 @@ use App\Services\FlareUrlResolver;
 use App\Services\OAuth\OAuthException;
 use App\Services\OAuth\TokenRecord;
 use App\Services\OAuth\TokenRefresher;
+use Spatie\OpenApiCli\Exceptions\AuthenticationException;
 
 function makeRecord(array $overrides = []): TokenRecord
 {
@@ -313,13 +314,27 @@ it('returns false from forceRefresh when no OAuth record is stored', function ()
     expect($this->store->forceRefresh())->toBeFalse();
 });
 
-it('returns false from forceRefresh when the refresh call fails', function () {
+it('throws from forceRefresh when the refresh grant is invalid', function () {
     $this->store->setRecord(makeRecord());
 
     $refresher = Mockery::mock(TokenRefresher::class);
     $refresher->shouldReceive('refresh')
         ->once()
         ->andThrow(new OAuthException('refresh failed', 'invalid_grant'));
+
+    app()->instance(TokenRefresher::class, $refresher);
+
+    expect(fn () => $this->store->forceRefresh())
+        ->toThrow(AuthenticationException::class, 'could not be refreshed');
+});
+
+it('returns false from forceRefresh when the refresh fails transiently', function () {
+    $this->store->setRecord(makeRecord());
+
+    $refresher = Mockery::mock(TokenRefresher::class);
+    $refresher->shouldReceive('refresh')
+        ->once()
+        ->andThrow(new OAuthException('Connection timed out'));
 
     app()->instance(TokenRefresher::class, $refresher);
 
@@ -340,7 +355,21 @@ it('persists an ambiguous refresh attempt and never replays its token', function
 
     expect($this->store->getAccessToken())->toBe('access-abc');
     expect($this->store->getRecord()?->refreshPending)->toBeTrue();
-    expect($this->store->forceRefresh())->toBeFalse();
+    expect(fn () => $this->store->forceRefresh())
+        ->toThrow(AuthenticationException::class, 'The previous refresh result is unknown');
+});
+
+it('throws instead of replaying when a pending refresh is loaded from disk', function () {
+    $this->store->setRecord(makeRecord(['expires_at' => time() - 1])->markRefreshPending());
+
+    $refresher = Mockery::mock(TokenRefresher::class);
+    $refresher->shouldReceive('shouldRefresh')->once()->andReturnTrue();
+    $refresher->shouldNotReceive('refresh');
+
+    app()->instance(TokenRefresher::class, $refresher);
+
+    expect(fn () => $this->store->getAccessToken())
+        ->toThrow(AuthenticationException::class, 'The previous refresh result is unknown');
 });
 
 it('writes secure directory config and lock permissions on POSIX systems', function () {

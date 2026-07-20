@@ -47,16 +47,6 @@ class AppServiceProvider extends ServiceProvider
                     return false;
                 }
 
-                if (
-                    $status === 401
-                    && app(CredentialStore::class)->lastRefreshError()?->errorCode === 'invalid_grant'
-                ) {
-                    $command->error('Your Flare OAuth session could not be refreshed and may have been revoked or changed.');
-                    $command->line('Run `flare login` to create a new connection.');
-
-                    return true;
-                }
-
                 $message = $response->json('message');
 
                 if ($message === 'Token has no resource authorization.') {

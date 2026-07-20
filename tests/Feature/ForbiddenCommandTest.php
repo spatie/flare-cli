@@ -93,6 +93,7 @@ it('distinguishes an invalid refresh grant and does not replay it', function () 
         ->expectsOutputToContain('Run `flare login`')
         ->assertExitCode(1);
 
-    Http::assertSentCount(3);
+    Http::assertSentCount(2);
+    Http::assertNotSent(fn ($request) => str_contains($request->url(), 'flareapp.io/api'));
     expect($this->store->getRecord()?->refreshPending)->toBeTrue();
 });
