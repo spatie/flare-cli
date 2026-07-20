@@ -2,6 +2,10 @@
 
 All notable changes to `flare-cli` will be documented in this file.
 
+## 1.3.1 - 2026-07-20
+
+- Account links now point at the split pages: personal access tokens under `/account/personal-access-tokens`, CLI and MCP connections under `/account/connected-apps` (spatie/flareapp.io#2515)
+
 ## 1.3.0 - 2026-07-20
 
 ### What's new
