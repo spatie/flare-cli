@@ -1749,7 +1749,7 @@
         },
         {
             "name": "illuminate/contracts",
-            "version": "v12.66.0",
+            "version": "v12.67.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/illuminate/contracts.git",
@@ -6990,16 +6990,16 @@
         },
         {
             "name": "spatie/laravel-openapi-cli",
-            "version": "1.4.1",
+            "version": "1.5.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/laravel-openapi-cli.git",
-                "reference": "d96abe3f331100d718d922c9e5d485664e3b2eab"
+                "reference": "e1323b0e25344f9e0d4bfa717da1782bdaa02b83"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/laravel-openapi-cli/zipball/d96abe3f331100d718d922c9e5d485664e3b2eab",
-                "reference": "d96abe3f331100d718d922c9e5d485664e3b2eab",
+                "url": "https://api.github.com/repos/spatie/laravel-openapi-cli/zipball/e1323b0e25344f9e0d4bfa717da1782bdaa02b83",
+                "reference": "e1323b0e25344f9e0d4bfa717da1782bdaa02b83",
                 "shasum": ""
             },
             "require": {
@@ -7058,7 +7058,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/laravel-openapi-cli/issues",
-                "source": "https://github.com/spatie/laravel-openapi-cli/tree/1.4.1"
+                "source": "https://github.com/spatie/laravel-openapi-cli/tree/1.5.0"
             },
             "funding": [
                 {
@@ -7066,7 +7066,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-08-07T11:15:08+00:00"
+            "time": "2026-08-14T15:31:27+00:00"
         },
         {
             "name": "spatie/laravel-package-tools",
@@ -9419,16 +9419,16 @@
         },
         {
             "name": "tempest/highlight",
-            "version": "2.27.0",
+            "version": "2.27.1",
             "source": {
                 "type": "git",
                 "url": "https://github.com/tempestphp/highlight.git",
-                "reference": "7eaf2f4030cc218320672902608b6226bb13a39a"
+                "reference": "a65bd95f70d01e082285e3c3f01cc33b6ddac1dd"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/tempestphp/highlight/zipball/7eaf2f4030cc218320672902608b6226bb13a39a",
-                "reference": "7eaf2f4030cc218320672902608b6226bb13a39a",
+                "url": "https://api.github.com/repos/tempestphp/highlight/zipball/a65bd95f70d01e082285e3c3f01cc33b6ddac1dd",
+                "reference": "a65bd95f70d01e082285e3c3f01cc33b6ddac1dd",
                 "shasum": ""
             },
             "require": {
@@ -9466,7 +9466,7 @@
             "description": "Fast, extensible, server-side code highlighting",
             "support": {
                 "issues": "https://github.com/tempestphp/highlight/issues",
-                "source": "https://github.com/tempestphp/highlight/tree/2.27.0"
+                "source": "https://github.com/tempestphp/highlight/tree/2.27.1"
             },
             "funding": [
                 {
@@ -9474,7 +9474,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-06-29T09:11:42+00:00"
+            "time": "2026-08-17T13:10:55+00:00"
         },
         {
             "name": "theseer/tokenizer",
