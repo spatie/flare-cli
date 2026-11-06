@@ -11,10 +11,10 @@ jobs:
   test:
     runs-on: ${{ matrix.os }}
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, windows-latest]
-        php: [8.4, 8.5]
+        php: [8.4, 8.5, 8.6]
         stability: [prefer-stable]
 
     name: P${{ matrix.php }} - ${{ matrix.stability }} - ${{ matrix.os }}
@@ -34,4 +34,15 @@ jobs:
         run: composer update --${{ matrix.stability }} --prefer-dist --no-interaction
 
       - name: Run tests
-        run: vendor/bin/pest --ci
+        run: vendor/bin/pest --ci --display-deprecations
+
+      - name: Smoke test the PHAR with the bundled spec fixture
+        shell: bash
+        env:
+          HOME: ${{ runner.temp }}/flare-phar-home
+          FLARE_CACHE_PATH: ${{ runner.temp }}/flare-phar-cache
+        run: |
+          php -r 'require "vendor/autoload.php"; (new Illuminate\Cache\FileStore(new Illuminate\Filesystem\Filesystem, getenv("FLARE_CACHE_PATH")))->put("openapi-cli-spec:".md5("https://flareapp.io/downloads/flare-api.yaml"), ["content" => file_get_contents("vendor/spatie/laravel-openapi-cli/flare-api.yaml"), "extension" => "yaml"], 86400);'
+          php builds/flare --version
+          php builds/flare list --raw
+          php builds/flare auth --no-interaction

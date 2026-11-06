@@ -115,6 +115,11 @@ composer test
 
 ## Releasing a new version
 
+Install dependencies with `composer install` before building. The committed lockfile
+keeps the bundled dependencies compatible with PHP 8.4.0; `composer update` on a newer
+PHP version can select dependencies with a higher minimum. CI tests the source with
+updated dependencies and smoke-tests the committed PHAR separately.
+
 1. **Build the PHAR**:
 
     ```bash
