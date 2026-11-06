@@ -2,6 +2,18 @@
 
 All notable changes to `flare-cli` will be documented in this file.
 
+## 1.3.2 - 2026-11-06
+
+### What changed
+
+- Fix PHP 8.6 CLI startup by upgrading to Laravel Zero 13 and requiring the upstream Illuminate Container fix.
+- Preserve PHP 8.4 support, including verified execution on PHP 8.4.0.
+- Rebuild the bundled PHAR as Flare 1.3.2 and verify it alongside the source suite on PHP 8.4, 8.5 and 8.6.
+
+The existing CLI behavior and tests are unchanged. Automated API coverage uses local fixtures/fakes; no live Flare account operations were performed.
+
+**Full changelog:** https://github.com/spatie/flare-cli/compare/1.3.1...1.3.2
+
 ## 1.3.1 - 2026-07-20
 
 - Account links now point at the split pages: personal access tokens under `/account/personal-access-tokens`, CLI and MCP connections under `/account/connected-apps` (spatie/flareapp.io#2515)
