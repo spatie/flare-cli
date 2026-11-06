@@ -10,7 +10,7 @@ A standalone CLI tool for [Flare](https://flareapp.io) built on Laravel Zero. Us
 
 ## Architecture
 
-- **Laravel Zero 12** — PHP CLI micro-framework
+- **Laravel Zero 13** — PHP CLI micro-framework
 - **spatie/laravel-openapi-cli** — fetches the spec from `https://flareapp.io/downloads/flare-api.yaml` (cached for 24h) and registers one command per API endpoint using `operationId`-based naming with `flare:` prefix
 - **CredentialStore** (`app/Services/CredentialStore.php`) — reads/writes API token to `~/.flare/config.json`
 - **LoginCommand / LogoutCommand** — custom commands (not from OpenAPI spec) for auth flow
