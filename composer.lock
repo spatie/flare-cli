@@ -7053,33 +7053,33 @@
         },
         {
             "name": "spatie/laravel-openapi-cli",
-            "version": "1.5.0",
+            "version": "1.6.0",
             "source": {
                 "type": "git",
                 "url": "https://github.com/spatie/laravel-openapi-cli.git",
-                "reference": "e1323b0e25344f9e0d4bfa717da1782bdaa02b83"
+                "reference": "733d41d0dfd95143581ac2ac38eacd22d8065e39"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/spatie/laravel-openapi-cli/zipball/e1323b0e25344f9e0d4bfa717da1782bdaa02b83",
-                "reference": "e1323b0e25344f9e0d4bfa717da1782bdaa02b83",
+                "url": "https://api.github.com/repos/spatie/laravel-openapi-cli/zipball/733d41d0dfd95143581ac2ac38eacd22d8065e39",
+                "reference": "733d41d0dfd95143581ac2ac38eacd22d8065e39",
                 "shasum": ""
             },
             "require": {
-                "illuminate/contracts": "^11.0||^12.0|^13.0",
-                "php": "^8.4",
+                "illuminate/contracts": "^13.0",
+                "php": "^8.4.1",
                 "spatie/laravel-package-tools": "^1.16",
-                "symfony/yaml": "^7.0",
+                "symfony/yaml": "^8.1",
                 "tempest/highlight": "^2.0"
             },
             "require-dev": {
                 "larastan/larastan": "^3.0",
                 "laravel/pint": "^1.14",
                 "nunomaduro/collision": "^8.8",
-                "orchestra/testbench": "^10.0.0||^9.0.0|^11.0.0",
-                "pestphp/pest": "^4.0",
-                "pestphp/pest-plugin-arch": "^4.0",
-                "pestphp/pest-plugin-laravel": "^4.0",
+                "orchestra/testbench": "^11.0",
+                "pestphp/pest": "^4.0|^5.3",
+                "pestphp/pest-plugin-arch": "^4.0|^5.0",
+                "pestphp/pest-plugin-laravel": "^4.0|^5.0",
                 "phpstan/extension-installer": "^1.4",
                 "phpstan/phpstan-deprecation-rules": "^2.0",
                 "phpstan/phpstan-phpunit": "^2.0"
@@ -7121,7 +7121,7 @@
             ],
             "support": {
                 "issues": "https://github.com/spatie/laravel-openapi-cli/issues",
-                "source": "https://github.com/spatie/laravel-openapi-cli/tree/1.5.0"
+                "source": "https://github.com/spatie/laravel-openapi-cli/tree/1.6.0"
             },
             "funding": [
                 {
@@ -7129,7 +7129,7 @@
                     "type": "github"
                 }
             ],
-            "time": "2026-08-14T15:31:27+00:00"
+            "time": "2026-11-06T12:03:32+00:00"
         },
         {
             "name": "spatie/laravel-package-tools",
@@ -9501,28 +9501,28 @@
         },
         {
             "name": "symfony/yaml",
-            "version": "v7.4.23",
+            "version": "v8.1.11",
             "source": {
                 "type": "git",
                 "url": "https://github.com/symfony/yaml.git",
-                "reference": "1e601207ffe627a2e621faa9d661f1d32dcf1cec"
+                "reference": "e8266f55160f674f290a5f567cb55e11e21f921b"
             },
             "dist": {
                 "type": "zip",
-                "url": "https://api.github.com/repos/symfony/yaml/zipball/1e601207ffe627a2e621faa9d661f1d32dcf1cec",
-                "reference": "1e601207ffe627a2e621faa9d661f1d32dcf1cec",
+                "url": "https://api.github.com/repos/symfony/yaml/zipball/e8266f55160f674f290a5f567cb55e11e21f921b",
+                "reference": "e8266f55160f674f290a5f567cb55e11e21f921b",
                 "shasum": ""
             },
             "require": {
-                "php": ">=8.2",
-                "symfony/deprecation-contracts": "^2.5|^3",
+                "php": ">=8.4.1",
                 "symfony/polyfill-ctype": "^1.8"
             },
             "conflict": {
-                "symfony/console": "<6.4"
+                "symfony/console": "<7.4"
             },
             "require-dev": {
-                "symfony/console": "^6.4|^7.0|^8.0"
+                "symfony/console": "^7.4|^8.0",
+                "yaml/yaml-test-suite": "*"
             },
             "bin": [
                 "Resources/bin/yaml-lint"
@@ -9553,7 +9553,7 @@
             "description": "Loads and dumps YAML files",
             "homepage": "https://symfony.com",
             "support": {
-                "source": "https://github.com/symfony/yaml/tree/v7.4.23"
+                "source": "https://github.com/symfony/yaml/tree/v8.1.11"
             },
             "funding": [
                 {
@@ -9573,7 +9573,7 @@
                     "type": "tidelift"
                 }
             ],
-            "time": "2026-11-04T08:27:22+00:00"
+            "time": "2026-11-04T08:39:20+00:00"
         },
         {
             "name": "ta-tikoma/phpunit-architecture-test",
